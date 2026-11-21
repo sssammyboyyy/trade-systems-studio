@@ -16,17 +16,17 @@ const REASON_CODES: Record<ResolutionActionType, string[]> = {
   approve_clean: [
     "CONFIRMED_SHIPPERS_CORRECTED_INVOICE",
     "VERIFIED_STATUTORY_TARIFF_EXCLUSION",
-    "AUTHORIZED_INCOTERMS_CIF_PORT_APPRAISAL",
+    "CIF_FREIGHT_INSURANCE_ITEMISED_ON_ENTRY",
     "DE_MINIMIS_STATUTORY_TOLERANCE_SATISFIED",
   ],
   request_paperwork: [
     "MISSING_CARRIER_ORIGINAL_OCEAN_BL",
     "UNPROVIDED_TOOLING_ASSIST_PURCHASE_ORDER",
-    "OMITTED_DESTINATION_INLAND_INSURANCE_CERTIFICATE",
+    "MISSING_INSURANCE_CERTIFICATE",
     "DISCORDANT_CHASSIS_SPLIT_WORK_ORDER",
   ],
   escalate_broker: [
-    "POTENTIAL_19_USC_1592_GROSS_NEGLIGENCE_EXPOSURE",
+    "POTENTIAL_19_USC_1592_EXPOSURE_CULPABILITY_REVIEW",
     "OFAC_50_PERCENT_BENEFICIAL_OWNERSHIP_REVIEW",
     "CONTESTED_WCO_GRI_ESSENTIAL_CHARACTER_DISPUTE",
     "PRIOR_DISCLOSURE_PETITION_REQUIRED_19_CFR_162_74",
@@ -39,7 +39,7 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
   statutoryCode,
   onResolved,
 }) => {
-  const { resolutionHistory, applyResolution, undoResolution } = usePreIngestFirewall();
+  const { resolutionHistory, applyResolution, undoResolution, ledgerStorage } = usePreIngestFirewall();
   const existingResolution = resolutionHistory[discrepancyId];
 
   const [activeAction, setActiveAction] = useState<ResolutionActionType | null>(null);
@@ -67,10 +67,10 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
   if (existingResolution) {
     const actionLabel =
       existingResolution.action === "approve_clean"
-        ? "APPROVED & PUSHED TO XML"
+        ? "APPROVED"
         : existingResolution.action === "request_paperwork"
-        ? "SHIPPER PAPERWORK REQUESTED"
-        : "ESCALATED TO LICENSED COUNSEL";
+        ? "DOCUMENTS REQUESTED"
+        : "ESCALATED TO BROKER / COUNSEL";
 
     const badgeColor =
       existingResolution.action === "approve_clean"
@@ -80,13 +80,13 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
         : "bg-red-500/10 border-red-500/30 text-red-400";
 
     return (
-      <div className="mt-3 p-2.5 rounded-lg border border-[#1F2937] bg-[#0F172A] flex items-center justify-between text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}>
+      <div className="mt-3 p-2.5 rounded-lg border border-terminal-subtle bg-terminal-slate flex items-center justify-between gap-2 text-xs font-mono">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}>
             {actionLabel}
           </span>
-          <span className="text-slate-400 text-[11px] truncate max-w-[200px]">
-            {existingResolution.reason_code}
+          <span className="text-ink-muted text-[11px] truncate" title={existingResolution.reason_code}>
+            {existingResolution.reason_code} · {ledgerStorage === "server" ? "logged to server ledger" : "saved in this browser"}
           </span>
         </div>
         <button
@@ -95,27 +95,24 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
             undoResolution(discrepancyId);
           }}
           className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors p-1"
-          title="Revert resolution"
+          title="Reopen (recorded as a new ledger entry)"
         >
           <RotateCcw className="w-3 h-3" />
-          <span>Undo</span>
+          <span>Reopen</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 p-3 rounded-lg border border-[#1F2937] bg-[#0B0F19]/90 backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-mono text-amber-400">
-          <AlertTriangle className="w-3.5 h-3.5" />
-          <span>
-            HOTL Gate • Conf(e) = {(confidence * 100).toFixed(1)}% • {statutoryCode}
+    <div className="mt-3 p-3 rounded-lg border border-terminal-subtle bg-canvas-dark/90">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-mono text-ink-amber">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            Review · confidence {(confidence * 100).toFixed(0)}% · {statutoryCode}
           </span>
         </div>
-        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
-          EU AI Act Art. 26
-        </span>
       </div>
 
       {!activeAction ? (
@@ -125,7 +122,7 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
             className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-mono transition-all active:scale-[0.98]"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Approve XML</span>
+            <span>Approve</span>
           </button>
 
           <button
@@ -145,10 +142,10 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
           </button>
         </div>
       ) : (
-        <div className="space-y-2 pt-1 border-t border-[#1F2937]">
+        <div className="space-y-2 pt-1 border-t border-terminal-subtle">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono text-slate-300">
-              Select Statutory Reason Code:
+            <span className="text-[11px] font-mono text-ink-secondary">
+              Reason
             </span>
             <button
               onClick={handleCancel}
@@ -162,11 +159,11 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
             aria-label="Statutory Reason Code"
             value={selectedReason}
             onChange={(e) => setSelectedReason(e.target.value)}
-            className="w-full text-xs font-mono bg-[#0F172A] border border-[#1F2937] rounded p-1.5 text-slate-200 focus:outline-none focus:border-blue-500"
+            className="w-full text-xs font-mono bg-terminal-slate border border-terminal-subtle rounded p-1.5 text-ink-primary focus:outline-none focus:border-cobalt-500"
           >
             {REASON_CODES[activeAction].map((code) => (
               <option key={code} value={code}>
-                {code}
+                {code.toLowerCase().replace(/_/g, " ")}
               </option>
             ))}
           </select>
@@ -175,7 +172,7 @@ export const ThreeWayResolutionBar: React.FC<ThreeWayResolutionBarProps> = ({
             onClick={handleConfirm}
             className="w-full py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-canvas-stone font-mono text-xs font-semibold tracking-wide transition-all active:scale-[0.98]"
           >
-            Confirm & Log to AuditRunProvenance
+            Record decision
           </button>
         </div>
       )}

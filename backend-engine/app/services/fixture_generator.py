@@ -286,7 +286,7 @@ def generate_nightmare_02(output_path: str):
     nightmare_02_freight_audit.pdf (2 Pages):
     Page 1: Ocean Carrier Freight Invoice with Demurrage & Detention.
     Page 2: Ocean Bill of Lading (B/L PACLU-894102914) & Terminal In-Gate / Out-Gate Free Time Audit Log.
-    Modeled after FMC Docket No. 21-08 / OSRA 2022 disputes.
+    Modeled on OSRA 2022 / 46 CFR Part 541 demurrage and detention disputes.
     """
     c = canvas.Canvas(output_path, pagesize=letter, invariant=1)
     _width, _height = letter
@@ -330,7 +330,8 @@ def generate_nightmare_02(output_path: str):
     c.setFont("Helvetica", 7.5)
     c.drawString(340, 696, "Pacific Crest Electronics Corp : Long Beach, CA 90802")
     c.drawString(340, 664, "40' High Cube # PACU-9182049 : Seal: US984102")
-    c.drawString(340, 652, "Vessel Discharge Date: March 24, 2024 : Free Time: 4 Days")
+    c.drawString(340, 652, "Vessel Discharge Date: March 24, 2024 : Free Time: 5 Calendar Days")
+    c.drawString(340, 640, "Invoice Date: April 2, 2024 : Disputes: billing-disputes@pacl.example")
 
     # Line Item Table Header
     c.setFillColor(colors.HexColor("#0F172A"))
@@ -349,7 +350,7 @@ def generate_nightmare_02(output_path: str):
         ("BAF/FSC", "Bunker / Fuel Surcharge (Index 32.5% vs 24.0%)", "$1,080.00", "$1,462.50", "+$382.50 OVER"),
         ("THC", "Terminal Handling Charges (Origin/Destination)", "$450.00", "$450.00", "$0.00"),
         ("CHS", "Chassis Split & Repositioning Surcharge (Unauthorized)", "$0.00", "$285.00", "+$285.00 UNWARRANTED"),
-        ("DET/DEM", "Container Detention (Billed Day 4 inside 4-day free time)", "$0.00", "$880.00", "+$880.00 UNLAWFUL")
+        ("DET/DEM", "Container Detention (Billed inside 5-day free time)", "$0.00", "$880.00", "+$880.00 UNLAWFUL")
     ]
 
     y = 586
@@ -385,7 +386,7 @@ def generate_nightmare_02(output_path: str):
     c.setFont("Helvetica-Bold", 8)
     c.drawString(46, 488, "FREIGHT INVOICE TOTAL & OVERBILLING RECONCILIATION:")
     c.drawString(46, 470, "Lawful Contractual Freight Total:")
-    c.drawString(46, 454, "Unauthorized / Inflated Surcharges (FMC Docket 21-08):")
+    c.drawString(46, 454, "Unauthorized / Inflated Surcharges (Service Contract SC-2024-PAC-0012):")
     c.drawString(46, 436, "TOTAL CARRIER INVOICED AMOUNT (PAYABLE):")
 
     c.setFont("Helvetica", 8)
@@ -403,15 +404,15 @@ def generate_nightmare_02(output_path: str):
     c.drawString(46, 395, "FEDERAL MARITIME COMMISSION (FMC) COMPLIANCE DISPUTE NOTICE")
     c.setFont("Helvetica", 7.5)
     c.setFillColor(colors.HexColor("#7F1D1D"))
-    c.drawString(46, 381, "1. CHASSIS SPLIT: Intermodal chassis split fees billed without prior shipper consent violate FMC Docket 21-08.")
+    c.drawString(46, 381, "1. CHASSIS SPLIT: Accessorial billed with no shipper work order or service-contract rule referenced.")
     c.drawString(46, 369, "2. INFLATED FSC: Billed fuel surcharge index (32.5%) exceeds the published weekly DOE/EIA benchmark (24.0%).")
-    c.drawString(46, 357, "3. OSRA 2022 DETENTION VIOLATION: Detention assessed on Day 4; gate records confirm delivery within 4-day free time.")
+    c.drawString(46, 357, "3. DETENTION: Billed although gate records show out-gate on day 5 of 5 calendar days of free time.")
     c.drawString(46, 345, "STATUTORY ACTION: Withholding $1,547.50 in unauthorized billing pending carrier charge dispute filing.")
 
     # Page 1 Footer
     c.setFont("Helvetica", 7)
     c.setFillColor(colors.HexColor("#64748B"))
-    c.drawString(46, 310, "PACL-FRT-982104 : Freight Audit Invoice (Page 1 of 2) : FMC Docket 21-08 Subject")
+    c.drawString(46, 310, "PACL-FRT-982104 : Freight Audit Invoice (Page 1 of 2) : 46 CFR Part 541 Billing Record")
 
     # --- PAGE 2: OCEAN BILL OF LADING & TERMINAL FREE-TIME GATE AUDIT ---
     c.showPage()
@@ -462,9 +463,9 @@ def generate_nightmare_02(output_path: str):
 
     gate_events = [
         ("Vessel Arrival", "Pier 400 Berth 402, LAX", "March 23, 2024 14:20 PST", "Pre-Discharge", "Non-Billable"),
-        ("Discharged", "Pier 400 Stacking Block B", "March 24, 2024 08:30 PST", "Day 1 of 5 (Free Clock Starts)", "Free Time Active"),
+        ("Discharged", "Pier 400 Stacking Block B", "March 24, 2024 08:30 PST", "Day 1 of 5 (Free Time Starts)", "Free Time Active"),
         ("Customs Release", "CBP 1C Entry Clear", "March 25, 2024 11:15 PST", "Day 2 of 5 (Free Time)", "Free Time Active"),
-        ("Carrier In-Gate", "Chassis Swap Yard Block 4", "March 27, 2024 09:40 PST", "Day 4 of 5 (Inside Free Window)", "Billed $880 UNLAWFUL"),
+        ("Carrier In-Gate", "Chassis Swap Yard Block 4", "March 27, 2024 09:40 PST", "Day 4 of 5 (Inside Free Time)", "Billed $880 UNLAWFUL"),
         ("Out-Gate Tally", "Pier 400 Gate 12 Trucking", "March 28, 2024 13:10 PST", "Day 5 of 5 (Final Free Day)", "Delivered On Time")
     ]
 
@@ -496,13 +497,13 @@ def generate_nightmare_02(output_path: str):
 
     c.setFillColor(colors.HexColor("#0369A1"))
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(46, 436, "OSRA 2022 / 46 U.S.C. Section 41104(a) TERMINAL EVIDENCE VERIFICATION:")
+    c.drawString(46, 436, "FREE-TIME EVIDENCE (46 CFR 545.5 / 46 CFR PART 541):")
     c.setFont("Helvetica", 7.5)
     c.setFillColor(colors.HexColor("#0C4A6E"))
     c.drawString(46, 422, "Pier 400 gate log proves container PACU-9182049 out-gated on March 28, 2024 at 13:10 PST.")
-    c.drawString(46, 410, "Discharge date March 24, 2024 yields statutory 5-day free time through midnight March 29, 2024.")
-    c.drawString(46, 396, "The assessed detention fee of $880.00 was invoiced on Day 4 while the equipment remained inside lawful free time.")
-    c.drawString(46, 382, "Conclusion: The $880.00 detention assessment constitutes an unlawful demurrage surcharge under OSRA 2022.")
+    c.drawString(46, 410, "Discharge on March 24, 2024 gives 5 calendar days of free time (March 24-28 inclusive).")
+    c.drawString(46, 396, "The $880.00 detention fee was billed although the container out-gated on the last free day.")
+    c.drawString(46, 382, "Conclusion: the $880.00 detention charge is not supported by the free-time record.")
 
     # Page 2 Footer
     c.setFont("Helvetica", 7)
@@ -553,7 +554,7 @@ def generate_nightmare_03(output_path: str):
     c.drawString(180, 663, "Pacific Crest Electronics Corp (IRS # 94-2849102)")
     c.drawString(180, 649, "8542.31.0001 (Electronic Integrated Circuits - Processors)")
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(180, 631, "$27,600.00 Customs Duty (General Duty on $240,000 Entered Value)")
+    c.drawString(180, 631, "$27,600.00 Duties Paid (Section 301 at 25% on $110,400 Entered Value, 1,000 Units)")
 
     # Export Match Section
     c.setStrokeColor(colors.HexColor("#047857"))
@@ -578,7 +579,7 @@ def generate_nightmare_03(output_path: str):
     c.drawString(180, 458, "BGFU-0941824 (Export Declaration ITN: X20240310998)")
     c.drawString(180, 444, "March 10, 2024 (Exported 55 Days Post-Import Entry)")
     c.drawString(180, 430, "Port of Los Angeles -> Rotterdam, Netherlands (NLRTM)")
-    c.drawString(180, 416, "1,000 Units High-Density Solid-State Memory Modules (Matched)")
+    c.drawString(180, 416, "1,000 Units Embedded Processor Modules (Matched by Serial Range)")
 
     c.setFont("Helvetica-Bold", 9)
     c.drawRightString(566, 396, "$27,324.00 CASH REFUND")
@@ -587,8 +588,8 @@ def generate_nightmare_03(output_path: str):
     c.setFont("Helvetica-Oblique", 7.5)
     c.setFillColor(colors.HexColor("#475569"))
     c.drawString(46, 376, "Statutory Formula: Lawful Duties Paid ($27,600.00) x 99% Drawback Allowance = $27,324.00 Net Refund.")
-    c.drawString(46, 362, "Claim is fully authenticated within the 5-year statutory filing deadline under 19 U.S.C. Section 1313(r).")
-    c.drawString(46, 350, "CBP ACE Drawback Entry Type 41 ready for automated liquidation.")
+    c.drawString(46, 362, "Export and claim fall within the 5-year limit of 19 U.S.C. Section 1313(r)(1).")
+    c.drawString(46, 350, "Prepared for filing as an ACE drawback entry (type 47) by a licensed customs broker.")
 
     # Customs Broker Signature & Submission Box
     c.setStrokeColor(colors.HexColor("#94A3B8"))

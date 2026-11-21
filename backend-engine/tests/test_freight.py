@@ -32,4 +32,4 @@ def test_freight_bill_audit():
     # Find Free time detention
     det_disc = next(d for d in discrepancies if "Detention" in d.title)
     assert det_disc.exposure_amount == Decimal("880.00")
-    assert "46 CFR § 545.5" in det_disc.statutory_code
+    assert "46 CFR 545.5" in det_disc.statutory_code

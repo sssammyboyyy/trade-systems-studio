@@ -1,22 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  X, 
-  ChevronRight, 
-  ChevronLeft, 
-  
-  CheckCircle2, 
-  Layers, 
-  FileText, 
-  ShieldAlert, 
-  Cpu, 
-  Play,
-  RotateCcw
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { sound } from "@/lib/audio";
-import { VERIFIED_PYTEST_COUNT } from "@/lib/metrics";
+import { BENCHMARK, VERIFIED_PYTEST_COUNT, fmtRate } from "@/lib/metrics";
 
 interface TourStep {
   id: string;
@@ -42,8 +30,8 @@ const TOUR_STEPS: TourStep[] = [
     id: "step-2",
     targetId: "audit-workspace",
     title: "Normalized Coordinate Space [0, 1000)",
-    badge: "02 / ZERO-BUDGET OCR",
-    description: "Powered by local pypdf / Docling layout parsing with zero cloud OCR fees. Bounding boxes are mathematically normalized so highlights stay locked onto canvas text regardless of display zoom or device scale.",
+    badge: "02 / LOCAL TEXT LAYER",
+    description: "Powered by local pypdf text-layer parsing; findings are anchored to text found in the document itself. Bounding boxes are mathematically normalized so highlights stay locked onto canvas text regardless of display zoom or device scale.",
     statute: "Formula: left = x_norm × scale × (W_base / 1000)",
     actionHint: "Inspect the rendered PDF on the left; highlights stay aligned across zoom levels.",
   },
@@ -71,7 +59,7 @@ const TOUR_STEPS: TourStep[] = [
     title: `Verifiable Proof: ${VERIFIED_PYTEST_COUNT}/${VERIFIED_PYTEST_COUNT} Tests & API Playground`,
     badge: "05 / PRODUCTION RIGOR",
     description: `Every financial and customs formula is backed by 100% Python Decimal precision. Inspect ${VERIFIED_PYTEST_COUNT} passing Pytest suites, review two-tier 6.5k evals/sec core & <60ms real PDF benchmarks, and simulate live REST requests in the API Playground.`,
-    statute: "6,496 evals/sec Core • < 60 ms Real 2-Page PDF p99 • Zero Floating-Point Drift",
+    statute: `${fmtRate(BENCHMARK.tier2_evals_per_sec)} rule evals/sec • ${BENCHMARK.tier1_p99_ms} ms p99 per 2-page PDF • Decimal arithmetic`,
     actionHint: "Click 'Architecture & Tests' in the header to run live API simulations and inspect architecture decision records.",
   },
 ];
@@ -134,10 +122,10 @@ export const ExecutiveTourOverlay: React.FC<ExecutiveTourOverlayProps> = ({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -16, scale: 0.98 }}
         transition={{ duration: 0.2 }}
-        className="w-full max-w-xl bg-[#0F172A] text-[#F8FAFC] border-2 border-cyan-500/60 rounded-xl shadow-2xl shadow-cyan-950/50 overflow-hidden flex flex-col font-mono"
+        className="w-full max-w-xl bg-terminal-slate text-canvas-stone border-2 border-cyan-500/60 rounded-xl shadow-2xl shadow-cyan-950/50 overflow-hidden flex flex-col font-mono"
       >
         {/* Tour Header */}
-        <div className="p-4 bg-[#0F172A] border-b border-[#1F2937] flex items-center justify-between">
+        <div className="p-4 bg-terminal-slate border-b border-terminal-subtle flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
@@ -180,13 +168,13 @@ export const ExecutiveTourOverlay: React.FC<ExecutiveTourOverlayProps> = ({
             {currentStep.description}
           </p>
 
-          <div className="p-2.5 rounded bg-[#0B0F19] border border-slate-800 text-[11px] text-emerald-400 flex items-center gap-2">
+          <div className="p-2.5 rounded bg-canvas-dark border border-slate-800 text-[11px] text-emerald-400 flex items-center gap-2">
             <span>{currentStep.actionHint}</span>
           </div>
         </div>
 
         {/* Tour Footer / Action Bar */}
-        <div className="p-3.5 bg-[#0F172A] border-t border-[#1F2937] flex items-center justify-between gap-3">
+        <div className="p-3.5 bg-terminal-slate border-t border-terminal-subtle flex items-center justify-between gap-3">
           {/* Progress dots */}
           <div className="flex items-center gap-1.5">
             {TOUR_STEPS.map((_, idx) => (
@@ -211,7 +199,7 @@ export const ExecutiveTourOverlay: React.FC<ExecutiveTourOverlayProps> = ({
               <button
                 onClick={handlePrev}
                 data-testid="tour-prev-btn"
-                className="px-3 py-1.5 rounded bg-[#0F172A] hover:bg-slate-800 text-slate-300 text-xs border border-[#1F2937] transition-all flex items-center gap-1"
+                className="px-3 py-1.5 rounded bg-terminal-slate hover:bg-slate-800 text-slate-300 text-xs border border-terminal-subtle transition-all flex items-center gap-1"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Back</span>

@@ -1,473 +1,439 @@
+"""
+Audit orchestration: document -> parsed payload -> deterministic rule engines -> AuditResult.
+
+Every audit is computed from a real document (a bundled fixture PDF or an upload) or from
+an explicit caller payload. There is no silent fallback to canned data.
+
+Provenance (ADR-001):
+    run_digest = SHA-256(calc_version | canonical(engagement_policy) | ruleset_hash | document_sha256)
+where ``ruleset_hash`` is the SHA-256 of the source of every rule module, so any change
+to a rule produces a new run id for the same document.
+"""
+
 import hashlib
 import json
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import date, datetime, timezone
+from decimal import Decimal
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from app.core.config import settings
-from app.models.schemas import AuditResult
+from app.core.statutory_rates import ieepa_max_penalty
+from app.models.schemas import AuditResult, BoundingBox, Discrepancy, KillShotMetrics, default_engagement_policy
 from app.services.ai_classifier import ai_classifier
 from app.services.customs_audit import audit_customs_invoice
 from app.services.drawback_audit import audit_duty_drawback
 from app.services.freight_audit import audit_freight_bill
-from app.services.layout_extractor import layout_extractor
+from app.services.pdf_field_parser import ParsedDocument, parse_document
+from app.services.utils import optional_decimal, parse_iso_date
 
 logger = logging.getLogger(__name__)
 
-# Ground-truth nightmare test scenarios for deterministic offline mode
-NIGHTMARE_GROUND_TRUTH: Dict[str, Dict[str, Any]] = {
+CALC_VERSION = "2026.2.0"
+
+# The bundled fixtures are evaluated as of a fixed date so the demo is reproducible
+# (interest accrual and the drawback claim date depend on it). Uploads use today's date.
+FIXTURE_AS_OF = date(2026, 11, 20)
+
+_RULE_MODULES = (
+    "core/statutory_rates.py",
+    "core/penalties.py",
+    "services/customs_audit.py",
+    "services/freight_audit.py",
+    "services/drawback_audit.py",
+    "services/sanctions_screener.py",
+    "services/pdf_field_parser.py",
+)
+
+
+def _compute_ruleset_hash() -> str:
+    root = Path(__file__).resolve().parent.parent
+    h = hashlib.sha256()
+    for rel in _RULE_MODULES:
+        h.update(rel.encode())
+        h.update((root / rel).read_bytes())
+    return h.hexdigest()
+
+
+RULESET_HASH = _compute_ruleset_hash()
+
+
+def canonical_json(obj: Any) -> bytes:
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+
+
+def sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def compute_run_digest(policy: Dict[str, Any], document_sha256: str) -> str:
+    return hashlib.sha256(
+        b"|".join([CALC_VERSION.encode(), canonical_json(policy), RULESET_HASH.encode(), document_sha256.encode()])
+    ).hexdigest()
+
+
+# Scenario catalogue for the bundled fixture documents.
+SCENARIOS: Dict[str, Dict[str, str]] = {
     "concept_1_customs": {
         "title": "Concept 1: Customs Compliance Firewall",
-        "subtitle": "19 U.S.C. § 1592 Negligence & 19 CFR § 152.103 Valuation Verification",
+        "subtitle": "19 U.S.C. § 1592 Penalty Exposure & 19 U.S.C. § 1401a Valuation",
         "filename": "nightmare_01_customs_ci.pdf",
-        "payload": {
-            "incoterms": "CIF LOS ANGELES",
-            "insurance_charge": "0.00",
-            "freight_charge": "1200.00",
-            "misclassified_value": "125000.00",
-            "declared_duty_rate": "0.00",
-            "lawful_duty_rate": "0.25",
-            "items": [
-                {
-                    "line_number": 1,
-                    "item_code": "DSP-8801",
-                    "description": "DSP Sub-System Controllers",
-                    "quantity": "500",
-                    "unit_price": "45.00",
-                    "stated_total": "25500.00",  # Arithmetic error ($22,500 actual)
-                    "hts_code": "8542.31.0000",
-                },
-                {
-                    "line_number": 2,
-                    "item_code": "AI-CORE-09",
-                    "description": "High-Speed AI Core Processors",
-                    "quantity": "1000",
-                    "unit_price": "125.00",
-                    "stated_total": "125000.00",
-                    "hts_code": "8471.30.0100",  # Misclassified (0% claimed vs 25% lawful)
-                },
-                {
-                    "line_number": 3,
-                    "item_code": "BUS-TRANS-01",
-                    "description": "Bus Interface Transceiver ICs",
-                    "quantity": "1000",
-                    "unit_price": "15.00",
-                    "stated_total": "15000.00",
-                    "hts_code": "8542.39.0000",
-                },
-            ],
-        },
     },
     "concept_2_freight": {
         "title": "Concept 2: Pre-Payment Freight Audit",
-        "subtitle": "Ocean Demurrage & FMC 46 CFR § 545.5 Tariff Surcharge Intercept",
+        "subtitle": "Detention Free Time & 46 CFR Part 541 Billing Requirements",
         "filename": "nightmare_02_freight_audit.pdf",
-        "payload": {
-            "base_freight": "4500.00",
-            "billed_fsc_rate": "0.325",  # 32.5%
-            "authorized_fsc_rate": "0.240",  # 24.0%
-            "chassis_split_fee": "285.00",
-            "has_chassis_work_order": False,
-            "port_free_days_allowed": 4,
-            "actual_days_held": 4,
-            "detention_billed": "880.00",
-        },
     },
     "concept_3_drawback": {
         "title": "Concept 3: Duty Drawback Harvester",
-        "subtitle": "19 U.S.C. § 1313 Unused Merchandise 99% CBP Duty Refund Matching",
+        "subtitle": "19 U.S.C. § 1313(j) Unused Merchandise Drawback Matching",
         "filename": "nightmare_03_duty_drawback.pdf",
-        "payload": {
-            "dutiable_value": "240000.00",
-            "duties_paid": "27600.00",
-            "drawback_percentage": "0.99",
-            "is_timely_5yr_window": True,
-            "import_entry": "441-9872134-2",
-            "export_bl": "EXP-2024-88412",
-        },
     },
     "concept_clean_fob": {
         "title": "Clean Production Invoice: Verified FOB Terms",
-        "subtitle": "Baseline Clean Fixture (Demo) • Zero 19 U.S.C. § 1592 Exposure",
+        "subtitle": "Baseline Clean Fixture (Demo) • No Valuation or Classification Findings",
         "filename": "clean_01_customs_fob.pdf",
-        "payload": {
-            "incoterms": "FOB YANTIAN",
-            "insurance_charge": "0.00",
-            "freight_charge": "0.00",
-            "misclassified_value": "0.00",
-            "declared_duty_rate": "0.00",
-            "lawful_duty_rate": "0.00",
-            "items": [
-                {
-                    "line_number": 1,
-                    "item_code": "ARM-CORTEX-01",
-                    "description": "ARM Cortex-M4 Microcontroller Processors",
-                    "quantity": "500",
-                    "unit_price": "45.00",
-                    "stated_total": "22500.00",
-                    "hts_code": "8542.31.0001",
-                },
-                {
-                    "line_number": 2,
-                    "item_code": "AI-TENSOR-02",
-                    "description": "High-Performance Neural Tensor Accelerators",
-                    "quantity": "200",
-                    "unit_price": "350.00",
-                    "stated_total": "70000.00",
-                    "hts_code": "8542.31.0001",
-                },
-                {
-                    "line_number": 3,
-                    "item_code": "PSU-MOD-03",
-                    "description": "High-Efficiency Switching Power Supplies",
-                    "quantity": "1000",
-                    "unit_price": "25.00",
-                    "stated_total": "25000.00",
-                    "hts_code": "8504.40.9580",
-                },
-            ],
-        },
     },
     "concept_4_sanctions": {
         "title": "Concept 4: OFAC 50% Rule & Entity Resolution",
-        "subtitle": "31 CFR § 501 Blocked Entity Aggregation & EAR Defense Watchlist",
+        "subtitle": "31 CFR Chapter V Blocked-Ownership Aggregation & BIS Entity List",
         "filename": "nightmare_04_ofac_registry.pdf",
-        "payload": {
-            "entity_id": "bis-el-cn-0941",
-            "name": "Global Micro Electronics Ltd",
-            "aggregate_blocked_pct": "55.0",
-            "action": "BLOCK_AND_REPORT",
-        },
     },
 }
+# Backwards-compatible name used by the API layer.
+NIGHTMARE_GROUND_TRUTH = SCENARIOS
+
+# Which parsed field anchors each finding on the page.
+_BBOX_KEYS: List[Tuple[str, Tuple[str, ...]]] = [
+    ("disc-c1-01-insurance", ("insurance_charge", "incoterms")),
+    ("disc-c1-01", ("freight_charge", "insurance_charge", "incoterms")),
+    ("disc-c1-03", ("hts_misclassification",)),
+    ("disc-c1-04-assists", ("unreported_assists",)),
+    ("disc-c2-01", ("fuel_surcharge",)),
+    ("disc-c2-02", ("chassis_split",)),
+    ("disc-c2-0", ("detention",)),
+    ("disc-c3-01", ("duties_paid", "import_entry")),
+    ("disc-c3-02", ("export_bl",)),
+    ("disc-c3-", ("import_entry",)),
+    ("disc-c4-", ("entity_id", "entity_name")),
+]
+
+
+def _anchor_box(d: Discrepancy, bboxes: Dict[str, BoundingBox]) -> Optional[Tuple[str, BoundingBox]]:
+    if d.id.startswith("disc-c1-02-line-"):
+        line_no = str(d.metadata.get("line_number", ""))
+        key = f"line_{int(line_no):03d}" if line_no.isdigit() else ""
+        return (key, bboxes[key]) if key in bboxes else None
+    for prefix, keys in _BBOX_KEYS:
+        if d.id.startswith(prefix):
+            for k in keys:
+                if k in bboxes:
+                    return k, bboxes[k]
+            return None
+    return None
+
+
+_ROW_ANCHORS = ("line_", "hts_misclassification", "base_freight", "fuel_surcharge", "chassis_split", "detention")
+
+
+def _padded(bb: BoundingBox, confidence: float, key: str = "") -> BoundingBox:
+    if key.startswith(_ROW_ANCHORS):
+        # Table rows: highlight the full row at the anchor's own vertical position.
+        y = max(0.0, bb.y - 4.0)
+        h = min(1000.0 - y, bb.height + 8.0)
+        return BoundingBox(x=60.0, y=y, width=880.0, height=h, page_number=bb.page_number, confidence=confidence)
+    x = max(0.0, bb.x - 6.0)
+    y = max(0.0, bb.y - 4.0)
+    w = min(1000.0 - x, bb.width + 12.0)
+    h = min(1000.0 - y, bb.height + 8.0)
+    return BoundingBox(x=x, y=y, width=w, height=h, page_number=bb.page_number, confidence=confidence)
+
+
+def audit_sanctions_payload(payload: Dict[str, Any], as_of: date) -> Tuple[KillShotMetrics, List[Discrepancy]]:
+    """OFAC 50% Rule evaluation for a target entity, with the dated IEEPA penalty maximum."""
+    from app.services.sanctions_screener import sanctions_screener
+
+    target_id = payload.get("entity_id")
+    target_name = payload.get("name")
+    if not target_id and target_name:
+        match = sanctions_screener.match_entity(target_name)
+        target_id = match.entity_id if match.matched and match.entity_id else target_name
+    if not target_id:
+        for party_key in ("shipper", "consignee", "buyer", "target_id"):
+            if payload.get(party_key):
+                target_id = payload.get(party_key)
+                break
+    target_id = target_id or "UNKNOWN_ENTITY"
+
+    graph_resp = sanctions_screener.get_ownership_graph(target_id)
+    eval_res = graph_resp.evaluation
+
+    tx_value = optional_decimal(
+        payload.get("transaction_value") or payload.get("dutiable_value") or payload.get("amount")
+    )
+    statutory_penalty = ieepa_max_penalty(tx_value, as_of.year)
+    penalty_note = (
+        f"IEEPA maximum for {as_of.year}: the greater of ${ieepa_max_penalty(None, as_of.year):,.2f} or twice the "
+        + (f"${tx_value:,.2f} transaction value." if tx_value is not None else "transaction value (not stated, so the base amount is shown).")
+    )
+    region = BoundingBox(x=42.0, y=620.0, width=535.0, height=100.0, page_number=1, confidence=0.99)
+
+    discrepancies: List[Discrepancy] = []
+    if eval_res.is_blocked_by_50_percent_rule:
+        if eval_res.blocking_entities:
+            owners_summary = " and ".join(
+                f"{b.get('ownership_pct', 0):g}% by {b.get('owner_name', b.get('owner_id'))}"
+                for b in eval_res.blocking_entities
+            )
+            desc = f"Target entity {eval_res.target_entity_name} ({target_id}) is owned {owners_summary}. "
+        else:
+            desc = f"Target entity {eval_res.target_entity_name} ({target_id}) has "
+        desc += (
+            f"Aggregate blocked ownership is {eval_res.total_blocked_ownership_pct:g}%, so the entity is blocked "
+            f"by operation of law under the OFAC 50 Percent Rule. {penalty_note}"
+        )
+        discrepancies.append(
+            Discrepancy(
+                id="disc-c4-01",
+                concept_id="concept_4_sanctions",
+                title=f"OFAC 50 Percent Rule: Aggregate Blocked Ownership ({eval_res.total_blocked_ownership_pct:g}%)",
+                description=desc,
+                severity="critical",
+                confidence=0.99,
+                bounding_box=region,
+                statutory_code="31 CFR 501 / OFAC 50 Percent Rule guidance",
+                exposure_amount=statutory_penalty,
+                statutory_defense="Block the property, do not proceed, and report to OFAC within 10 business days (31 CFR 501.603).",
+                metadata={
+                    "target_id": target_id,
+                    "blocked_ownership_pct": f"{eval_res.total_blocked_ownership_pct:g}%",
+                    "compliance_action": eval_res.compliance_action,
+                    "blocking_entities": eval_res.blocking_entities,
+                    "penalty_basis": "50_USC_1705",
+                    "penalty_year": as_of.year,
+                },
+            )
+        )
+    elif eval_res.direct_sdn_status:
+        discrepancies.append(
+            Discrepancy(
+                id="disc-c4-sdn-direct",
+                concept_id="concept_4_sanctions",
+                title=f"OFAC SDN Direct Match: {eval_res.target_entity_name}",
+                description=(
+                    f"Target entity {eval_res.target_entity_name} ({target_id}) is on the SDN List; its property and "
+                    f"interests in property are blocked. {penalty_note}"
+                ),
+                severity="critical",
+                confidence=0.99,
+                bounding_box=region,
+                statutory_code="31 CFR Chapter V",
+                exposure_amount=statutory_penalty,
+                statutory_defense="Block and report (31 CFR 501.603).",
+                metadata={"target_id": target_id, "direct_sdn": True, "compliance_action": eval_res.compliance_action,
+                          "penalty_basis": "50_USC_1705", "penalty_year": as_of.year},
+            )
+        )
+    elif eval_res.compliance_action in ("REQUIRES_MANUAL_REVIEW", "ENHANCED_DUE_DILIGENCE", "HOLD_INVESTIGATION", "COMPLIANCE_HOLD"):
+        discrepancies.append(
+            Discrepancy(
+                id="disc-c4-unscreened-hold",
+                concept_id="concept_4_sanctions",
+                title=f"Compliance Hold: Ownership Not Verified ({eval_res.target_entity_name})",
+                description=(
+                    f"{eval_res.target_entity_name} ({target_id}) has no ownership record in the screening dataset. "
+                    f"Hold for manual ownership verification before proceeding."
+                ),
+                severity="warning",
+                confidence=0.50,
+                exposure_amount=Decimal("0.00"),
+                statutory_code="31 CFR Chapter V / compliance hold",
+                statutory_defense="Obtain beneficial-ownership documentation and re-screen.",
+                bounding_box=BoundingBox(x=42.0, y=620.0, width=535.0, height=100.0, page_number=1, confidence=0.50),
+                metadata={"target_id": target_id, "compliance_action": eval_res.compliance_action, "review_required": True},
+            )
+        )
+
+    penalty = sum((d.exposure_amount for d in discrepancies if d.severity == "critical"), Decimal("0.00"))
+    return KillShotMetrics(penalty_exposure_avoided=penalty), discrepancies
+
 
 class TradeDocumentExtractor:
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY.strip() if settings.GEMINI_API_KEY else ""
         self.is_offline = not bool(self.api_key)
 
-    def validate_document_firewall(
-        self,
-        payload: Dict[str, Any],
-        concept_id: str,
-        layout_boxes: Optional[List[Dict[str, Any]]] = None
-    ) -> None:
-        """
-        Pre-ingest document firewall (C1):
-        Validates input payload structures before audit execution and rejects malformed payloads.
-        Correlates document presence and layout extraction tokens when available.
-        """
+    def validate_document_firewall(self, payload: Dict[str, Any], concept_id: str) -> None:
+        """Reject payloads that do not carry the structures a concept's rules need."""
         if not payload or not isinstance(payload, dict):
             raise ValueError("Pre-ingest document firewall rejected: empty or non-dict payload.")
+        required = {
+            "concept_1_customs": ("items", "misclassified_value", "dutiable_value", "unreported_assists"),
+            "concept_clean_fob": ("items", "misclassified_value", "dutiable_value", "unreported_assists"),
+            "concept_2_freight": ("base_freight", "chassis_split_fee", "detention_billed", "freight_charges"),
+            "concept_3_drawback": ("duties_paid", "dutiable_value", "import_entry"),
+            "concept_4_sanctions": ("entity_id", "name", "shipper", "consignee", "buyer", "target_id"),
+        }.get(concept_id)
+        if required and not any(k in payload for k in required):
+            labels = {
+                "concept_1_customs": "Customs firewall rejected: payload missing required invoice structures.",
+                "concept_clean_fob": "Customs firewall rejected: payload missing required invoice structures.",
+                "concept_2_freight": "Freight firewall rejected: payload missing required freight billing fields.",
+                "concept_3_drawback": "Drawback firewall rejected: payload missing required duty drawback data.",
+                "concept_4_sanctions": "Sanctions firewall rejected: payload missing target entity identifiers.",
+            }
+            raise ValueError(labels[concept_id])
 
-        if concept_id in ("concept_1_customs", "concept_clean_fob"):
-            if not any(k in payload for k in ("items", "misclassified_value", "dutiable_value", "unreported_assists")):
-                raise ValueError("Customs firewall rejected: payload missing required invoice structures.")
-        elif concept_id == "concept_2_freight":
-            if not any(k in payload for k in ("base_freight", "chassis_split_fee", "detention_billed", "freight_charges")):
-                raise ValueError("Freight firewall rejected: payload missing required freight billing fields.")
-        elif concept_id == "concept_3_drawback":
-            if not any(k in payload for k in ("duties_paid", "dutiable_value", "import_entry")):
-                raise ValueError("Drawback firewall rejected: payload missing required duty drawback data.")
-        elif concept_id == "concept_4_sanctions":
-            if not any(k in payload for k in ("entity_id", "name", "shipper", "consignee", "buyer", "target_id")):
-                raise ValueError("Sanctions firewall rejected: payload missing target entity identifiers.")
+    def _enrich_gri(self, payload: Dict[str, Any], discrepancies: List[Discrepancy]) -> None:
+        if not ai_classifier.is_online:
+            return
+        try:
+            items = payload.get("items") or []
+            target_item = next((it for it in items if "8471" in str(it.get("hts_code", ""))), items[0] if items else {})
+            gri = ai_classifier.analyze_gri_classification(
+                item_description=target_item.get("description", "Electronic Processing Unit"),
+                declared_hts=target_item.get("hts_code", "8471.30.0100"),
+            )
+            if gri:
+                for d in discrepancies:
+                    if "HTS" in d.title:
+                        d.metadata["ai_gri_reasoning"] = gri.classification_rationale
+                        d.metadata["gri_rules_applied"] = gri.gri_rules_applied
+                        d.metadata["ai_model"] = settings.GEMINI_CLASSIFIER_MODEL
+        except Exception as e:
+            logger.warning("AI GRI reasoning enrichment failed: %s", e)
 
-    def run_audit(self, concept_id: str, custom_payload: Optional[Dict[str, Any]] = None) -> AuditResult:
+    def run_audit(
+        self,
+        concept_id: str,
+        custom_payload: Optional[Dict[str, Any]] = None,
+        *,
+        parsed_document: Optional[ParsedDocument] = None,
+        document_sha256: Optional[str] = None,
+        document_filename: Optional[str] = None,
+        as_of: Optional[date] = None,
+    ) -> AuditResult:
         """
-        Executes document extraction and deterministic trade audit.
-        - Guarantees flawless offline execution without API keys.
-        - Enforces pre-ingest document firewall (C1).
-        - Computes content-addressed run ID using SHA-256 on actual payload bytes (M4).
-        - When GEMINI_API_KEY is present, enriches GRI reasoning via gemini-3.8-flash using real item data (M12).
-        - Strict determinism invariant: all math is computed via Python Decimal.
-        """
-        if concept_id not in NIGHTMARE_GROUND_TRUTH:
-            raise KeyError(f"Concept scenario '{concept_id}' not found in registered ground truth catalog.")
+        Run the deterministic audit for one concept.
 
-        scenario = NIGHTMARE_GROUND_TRUTH[concept_id]
-        pdf_path = os.path.join(settings.NIGHTMARES_DIR, scenario["filename"])
+        - ``parsed_document``: an uploaded document already parsed (its own text, boxes and hash).
+        - ``custom_payload``: an explicit payload (API callers and tests); no document is attached.
+        - neither: parse the bundled fixture PDF for the concept.
+        """
+        if concept_id not in SCENARIOS:
+            raise KeyError(f"Concept scenario '{concept_id}' not found in registered scenario catalogue.")
+        scenario = SCENARIOS[concept_id]
+
         layout_boxes: List[Dict[str, Any]] = []
-        extraction_source = "custom_payload" if custom_payload is not None else "fixture_fallback"
+        bboxes: Dict[str, BoundingBox] = {}
+        missing: List[str] = []
+        source: Literal["fixture", "upload", "custom_payload"]
 
-        # 1. Real document reading & layout extraction if disk fixture is present (C1)
-        if custom_payload is not None:
+        if parsed_document is not None:
+            source = "upload"
+            payload = parsed_document.payload
+            bboxes = parsed_document.bounding_boxes
+            layout_boxes = parsed_document.metadata.get("layout_boxes", [])
+            missing = parsed_document.missing_fields
+            filename = document_filename or "uploaded.pdf"
+            document_url = ""
+            as_of = as_of or date.today()
+        elif custom_payload is not None:
+            source = "custom_payload"
             payload = custom_payload
-            if os.path.exists(pdf_path):
-                try:
-                    layout_boxes = layout_extractor.extract_bounding_boxes(pdf_path)
-                except Exception as e:
-                    logger.warning("Could not extract layout from %s: %s", pdf_path, e)
+            filename = document_filename or "payload.json"
+            document_url = ""
+            document_sha256 = document_sha256 or hashlib.sha256(canonical_json(payload)).hexdigest()
+            as_of = as_of or parse_iso_date(payload.get("as_of_date")) or date.today()
         else:
-            if os.path.exists(pdf_path):
-                try:
-                    from app.services.pdf_field_parser import parse_document
-                    parsed_doc = parse_document(pdf_path, concept_id=concept_id)
-                    payload = parsed_doc.payload
-                    layout_boxes = layout_extractor.extract_bounding_boxes(pdf_path)
-                    extraction_source = "pdf_parsed"
-                except Exception as e:
-                    logger.warning("PDF field parser failed for %s, falling back to scenario fixture: %s", pdf_path, e)
-                    payload = scenario["payload"]
-            else:
-                payload = scenario["payload"]
+            source = "fixture"
+            pdf_path = os.path.join(settings.NIGHTMARES_DIR, scenario["filename"])
+            parsed = parse_document(pdf_path, concept_id=concept_id)
+            payload = parsed.payload
+            bboxes = parsed.bounding_boxes
+            layout_boxes = parsed.metadata.get("layout_boxes", [])
+            missing = parsed.missing_fields
+            filename = scenario["filename"]
+            document_url = f"/api/v1/documents/{scenario['filename']}"
+            document_sha256 = sha256_file(pdf_path)
+            as_of = as_of or FIXTURE_AS_OF
 
-        # 2. Pre-ingest document firewall validation (C1)
-        self.validate_document_firewall(payload, concept_id, layout_boxes=layout_boxes)
+        payload = dict(payload)
+        payload.setdefault("as_of_date", as_of.isoformat())
+        if concept_id == "concept_3_drawback":
+            payload.setdefault("claim_date", as_of.isoformat())
 
-        # 3. Deterministic financial and legal calculation engine
+        self.validate_document_firewall(payload, concept_id)
+
         if concept_id in ("concept_1_customs", "concept_clean_fob"):
             metrics, discrepancies = audit_customs_invoice(payload)
-            # When online, enrich GRI classification justification via gemini-3.8-flash using real item data (M12)
-            if ai_classifier.is_online:
-                try:
-                    target_item = next(
-                        (it for it in payload.get("items", []) if "8471" in str(it.get("hts_code", ""))),
-                        payload.get("items", [{}])[0] if payload.get("items") else {}
-                    )
-                    desc = target_item.get("description", "Electronic Processing Unit")
-                    declared_code = target_item.get("hts_code", "8471.30.0100")
-                    gri_enrichment = ai_classifier.analyze_gri_classification(
-                        item_description=desc,
-                        declared_hts=declared_code
-                    )
-                    if gri_enrichment:
-                        for d in discrepancies:
-                            if "HTS" in d.title:
-                                d.metadata["ai_gri_reasoning"] = gri_enrichment.classification_rationale
-                                d.metadata["gri_rules_applied"] = gri_enrichment.gri_rules_applied
-                except Exception as e:
-                    logger.warning("AI GRI reasoning enrichment failed: %s", e)
+            self._enrich_gri(payload, discrepancies)
         elif concept_id == "concept_2_freight":
             metrics, discrepancies = audit_freight_bill(payload)
         elif concept_id == "concept_4_sanctions":
-            from decimal import Decimal
-
-            from app.models.schemas import BoundingBox, Discrepancy, KillShotMetrics
-            from app.services.sanctions_screener import sanctions_screener
-            from app.services.utils import quantize_currency, safe_decimal
-
-            target_id = payload.get("entity_id")
-            target_name = payload.get("name")
-            if not target_id and target_name:
-                match = sanctions_screener.match_entity(target_name)
-                target_id = match.entity_id if match.matched and match.entity_id else target_name
-            if not target_id:
-                for party_key in ("shipper", "consignee", "buyer", "target_id"):
-                    if payload.get(party_key):
-                        target_id = payload.get(party_key)
-                        break
-
-            target_id = target_id or "UNKNOWN_ENTITY"
-            graph_resp = sanctions_screener.get_ownership_graph(target_id)
-            eval_res = graph_resp.evaluation
-            if payload.get("action") == "CLEAR_TRANSACTION" or payload.get("compliance_action") == "CLEAR_TRANSACTION":
-                eval_res.compliance_action = "CLEAR_TRANSACTION"
-
-            # Statutory penalty exposure under 50 U.S.C. Section 1705 / 31 CFR Part 501:
-            # Greater of statutory baseline ($350,000.00) or 2x transaction value
-            tx_value = safe_decimal(
-                payload.get("transaction_value") or payload.get("dutiable_value") or payload.get("amount"),
-                "0.00"
-            )
-            ieepa_statutory_base = Decimal("350000.00")
-            statutory_penalty = max(ieepa_statutory_base, quantize_currency(tx_value * Decimal("2.00")))
-
-            discrepancies = []
-            if eval_res.is_blocked_by_50_percent_rule:
-                if eval_res.blocking_entities:
-                    owners_summary = " and ".join(
-                        f"{b.get('ownership_pct', 0):g}% by {b.get('owner_name', b.get('owner_id'))}"
-                        for b in eval_res.blocking_entities
-                    )
-                    desc = (
-                        f"Target entity {eval_res.target_entity_name} ({target_id}) is owned {owners_summary}. "
-                        f"Aggregate blocked ownership is {eval_res.total_blocked_ownership_pct:g}%, "
-                        f"rendering the entity blocked by operation of law under the OFAC 50% Rule."
-                    )
-                else:
-                    desc = (
-                        f"Target entity {eval_res.target_entity_name} ({target_id}) has "
-                        f"{eval_res.total_blocked_ownership_pct:g}% aggregate blocked ownership, "
-                        f"rendering the entity blocked by operation of law under the OFAC 50% Rule."
-                    )
-
-                discrepancies.append(
-                    Discrepancy(
-                        id="disc-c4-01",
-                        concept_id="concept_4_sanctions",
-                        title=f"31 CFR Section 501 Aggregate Blocked Ownership Violation ({eval_res.total_blocked_ownership_pct:g}%)",
-                        description=desc,
-                        severity="critical",
-                        confidence=0.99,
-                        bounding_box=BoundingBox(
-                            x=42.0,
-                            y=620.0,
-                            width=535.0,
-                            height=100.0,
-                            page_number=1,
-                            confidence=0.99,
-                        ),
-                        statutory_code="31 CFR Section 501",
-                        exposure_amount=statutory_penalty,
-                        statutory_defense="OFAC 50 Percent Rule",
-                        metadata={
-                            "target_id": target_id,
-                            "blocked_ownership_pct": f"{eval_res.total_blocked_ownership_pct:g}%",
-                            "compliance_action": eval_res.compliance_action,
-                            "blocking_entities": eval_res.blocking_entities,
-                        },
-                    )
-                )
-            elif eval_res.direct_sdn_status:
-                discrepancies.append(
-                    Discrepancy(
-                        id="disc-c4-sdn-direct",
-                        concept_id="concept_4_sanctions",
-                        title=f"OFAC Specially Designated National (SDN) Direct Match: {eval_res.target_entity_name}",
-                        description=(
-                            f"Target entity {eval_res.target_entity_name} ({target_id}) is directly listed on the OFAC SDN List. "
-                            f"Property and interests in property are blocked pursuant to 31 CFR Part 501."
-                        ),
-                        severity="critical",
-                        confidence=0.99,
-                        bounding_box=BoundingBox(
-                            x=42.0,
-                            y=620.0,
-                            width=535.0,
-                            height=100.0,
-                            page_number=1,
-                            confidence=0.99,
-                        ),
-                        statutory_code="31 CFR Part 501",
-                        exposure_amount=statutory_penalty,
-                        statutory_defense="Mandatory Blocking Order",
-                        metadata={
-                            "target_id": target_id,
-                            "direct_sdn": True,
-                            "compliance_action": eval_res.compliance_action,
-                        },
-                    )
-                )
-            elif eval_res.compliance_action in ("REQUIRES_MANUAL_REVIEW", "ENHANCED_DUE_DILIGENCE", "HOLD_INVESTIGATION", "COMPLIANCE_HOLD"):
-                discrepancies.append(
-                    Discrepancy(
-                        id="disc-c4-unscreened-hold",
-                        concept_id="concept_4_sanctions",
-                        title=f"Unscreened Entity Compliance Hold: {eval_res.target_entity_name}",
-                        description=(
-                            f"Entity {eval_res.target_entity_name} ({target_id}) is unverified in corporate ownership records. "
-                            f"Mandatory pre-clearance hold enforced under 31 CFR Section 501 compliance procedures pending manual broker/counsel review."
-                        ),
-                        severity="warning",
-                        confidence=0.50,
-                        exposure_amount=Decimal("0.00"),
-                        statutory_code="31 CFR Section 501 / Compliance Hold",
-                        statutory_defense="Manual Ownership Verification Protocol",
-                        bounding_box=BoundingBox(
-                            x=42.0,
-                            y=620.0,
-                            width=535.0,
-                            height=100.0,
-                            page_number=1,
-                            confidence=0.50,
-                        ),
-                        metadata={
-                            "target_id": target_id,
-                            "compliance_action": eval_res.compliance_action,
-                            "review_required": True,
-                        },
-                    )
-                )
-
-            penalty_exposure = sum(
-                (d.exposure_amount for d in discrepancies if d.severity == "critical"),
-                Decimal("0.00")
-            )
-            metrics = KillShotMetrics(
-                penalty_exposure_avoided=penalty_exposure,
-                carrier_overbilling_caught=Decimal("0.00"),
-                drawback_unclaimed_unlocked=Decimal("0.00"),
-            )
-        else:  # concept_3_drawback
+            metrics, discrepancies = audit_sanctions_payload(payload, as_of)
+        else:
             metrics, discrepancies = audit_duty_drawback(payload)
 
-        # Correlate discrepancies with extracted layout tokens if layout boxes are present (C1)
-        if layout_boxes:
-            for d in discrepancies:
-                matched_box = None
-                tokens_to_search = []
-                if "cif" in d.id.lower() or "cif" in d.title.lower():
-                    tokens_to_search = ["CIF", "INCOTERMS"]
-                elif "sanction" in d.id.lower() or "501" in d.statutory_code:
-                    tokens_to_search = ["31 CFR", "OFAC", "SDN", "OWNERSHIP", "PETROV", "GLOBAL MICRO"]
-                elif "chassis" in d.id.lower():
-                    tokens_to_search = ["CHASSIS", "SPLIT"]
-                elif "detention" in d.id.lower() or "free time" in d.title.lower():
-                    tokens_to_search = ["DEMURRAGE", "DETENTION", "FREE TIME"]
-                elif "drawback" in d.id.lower():
-                    tokens_to_search = ["DRAWBACK", "7501", "1313"]
-                elif "hts" in d.id.lower() or "misclassification" in d.title.lower():
-                    tokens_to_search = ["8471", "8542", "HTS"]
-                elif "line" in d.id.lower():
-                    line_num = str(d.metadata.get("line_number", ""))
-                    if line_num:
-                        tokens_to_search = [f"LINE {line_num}", f"00{line_num}", line_num]
-
-                for tok in tokens_to_search:
-                    for lb in layout_boxes:
-                        if tok.upper() in lb.get("text", "").upper():
-                            matched_box = lb["bounding_box"]
-                            break
-                    if matched_box:
-                        break
-
-                if matched_box:
-                    d.metadata["layout_verified"] = True
-                    d.metadata["layout_matched_token"] = tok
-                    d.bounding_box.page_number = matched_box.page_number
-                else:
-                    d.metadata["layout_verified"] = False
-
-        # Content-addressed deterministic audit_run_id from payload bytes & document content (M4)
-        calc_version = "2026.1.0"
-        has_quarantine_trigger = any(
-            d.confidence < 0.85 or d.severity == "critical" for d in discrepancies
-        )
-        quarantine_status = "QUARANTINED" if has_quarantine_trigger else "RELEASED"
-        
-        payload_bytes = json.dumps(payload, sort_keys=True).encode("utf-8")
-        hasher = hashlib.sha256(payload_bytes)
-        if os.path.exists(pdf_path):
-            try:
-                with open(pdf_path, "rb") as f:
-                    while chunk := f.read(65536):
-                        hasher.update(chunk)
-            except Exception as e:
-                logger.warning("Could not read document for %s: %s", pdf_path, e)
-
-        content_hash = hasher.hexdigest()[:12]
-        audit_run_id = f"RUN-2026-{concept_id.upper()}-{content_hash}"
-
-        # Record extraction source in discrepancy metadata
+        # Anchor each finding to text found in *this* document.
         for d in discrepancies:
-            d.metadata["extraction_source"] = extraction_source
+            anchored = _anchor_box(d, bboxes)
+            if anchored:
+                key, bb = anchored
+                d.bounding_box = _padded(bb, d.confidence, key)
+                d.metadata["layout_verified"] = True
+                d.metadata["layout_anchor"] = key
+                d.metadata["bbox_source"] = "document_text"
+            else:
+                d.metadata["layout_verified"] = False
+                d.metadata["bbox_source"] = "template_region" if layout_boxes else "none"
+            d.metadata["extraction_source"] = source
+
+        # Release gate: a document is released only when extraction is complete,
+        # the currency is USD and no finding needs review.
+        reasons: List[str] = []
+        if missing:
+            reasons.append("MISSING_REQUIRED_FIELDS")
+        currency = payload.get("currency")
+        if source != "custom_payload" and currency not in (None, "USD"):
+            reasons.append("NON_USD_CURRENCY")
+        if any(d.confidence < 0.85 or d.severity == "critical" for d in discrepancies):
+            reasons.append("FINDINGS_REQUIRE_REVIEW")
+        quarantine_status = "QUARANTINED" if reasons else "RELEASED"
+
+        policy = default_engagement_policy()
+        assert document_sha256 is not None
+        run_digest = compute_run_digest(policy, document_sha256)
 
         return AuditResult(
             concept_id=concept_id,
             title=scenario["title"],
             subtitle=scenario["subtitle"],
-            document_filename=scenario["filename"],
-            document_url=f"/api/v1/documents/{scenario['filename']}",
+            document_filename=filename,
+            document_url=document_url,
             metrics=metrics,
             discrepancies=discrepancies,
             extracted_data=payload,
             offline_fallback_active=not ai_classifier.is_online,
-            audit_run_id=audit_run_id,
-            calc_version=calc_version,
+            audit_run_id=f"RUN-{run_digest[:20].upper()}",
+            run_digest=run_digest,
+            document_sha256=document_sha256,
+            ruleset_hash=RULESET_HASH,
+            calc_version=CALC_VERSION,
             executed_at=datetime.now(timezone.utc).isoformat(),
+            as_of_date=as_of.isoformat(),
+            source=source,
+            missing_fields=missing,
+            quarantine_reasons=reasons,
             quarantine_status=quarantine_status,
+            engagement_policy=policy,
         )
+
 
 extractor_service = TradeDocumentExtractor()

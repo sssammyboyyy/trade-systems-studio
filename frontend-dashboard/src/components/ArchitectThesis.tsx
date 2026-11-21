@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Shield, ArrowRight, Terminal, CheckCircle2, Mail, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface ArchitectThesisProps {
   onOpenReview: () => void;
@@ -11,7 +11,7 @@ export const ArchitectThesis: React.FC<ArchitectThesisProps> = ({
   onOpenReview,
 }) => {
   return (
-    <div className="w-full max-w-full overflow-hidden my-4 bg-[#0F172A] border border-slate-800 rounded-2xl p-4 sm:p-6 lg:p-8">
+    <div className="w-full max-w-full overflow-hidden my-4 bg-terminal-slate border border-slate-800 rounded-2xl p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Author Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-6 border-b border-slate-800">
@@ -52,7 +52,7 @@ export const ArchitectThesis: React.FC<ArchitectThesisProps> = ({
             Holding a Bachelor of Commerce in Economic Sciences (International Trade) from North-West University (NWU), I approached this problem from statutory first principles: international trade compliance and customs valuation are strictly deterministic state machines, not probabilistic text completions. In customs compliance, a guess on an HTS Chapter 85 subheading or an omitted CIF marine insurance declaration does not save money; it triggers catastrophic <span className="statutory-cite">19 U.S.C. § 1592</span> civil penalties up to 4.0x lawful duty loss.
           </p>
           <p>
-            I built Trade Systems Studio to prove a deterministic alternative: use spatial document vision (local pypdf / Docling layout extraction) strictly to extract bounding box coordinates, and use deterministic Python rules engines with Python Decimal to enforce 19 CFR valuation math, WCO GRI 1 to 6 classification hierarchies, and CargoWise UniversalShipment XML schemas with zero float drift.
+            I built Trade Systems Studio to prove a deterministic alternative: use spatial document vision (local pypdf text-layer extraction) strictly to extract bounding box coordinates, and use deterministic Python rules engines with Python Decimal to enforce 19 CFR valuation math, WCO GRI 1 to 6 classification hierarchies, and CargoWise UniversalShipment XML schemas with zero float drift.
           </p>
           <p className="text-ink-muted type-mono-data">
             Whether you want to deploy this pre-audit firewall in front of your CargoWise instance, or bring me in to architect autonomous trade systems for your engineering scale-up, you can test the exact production code right on this page.

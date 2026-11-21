@@ -21,37 +21,37 @@ export const KillShotMetricsBar: React.FC<KillShotMetricsBarProps> = ({
     >
       <div className="bg-terminal-slate border border-terminal-subtle px-4 py-3 rounded-lg">
         <div className="type-caption-mono uppercase text-ink-muted">
-          19 U.S.C. § 1592 Exposure Avoided
+          19 U.S.C. § 1592 Exposure Flagged
         </div>
         <div className="type-display-md sm:type-display-lg font-mono text-ink-crimson tabular-nums mt-0.5">
           <RollingNumber value={exposureAvoided} />
         </div>
         <div className="type-caption-mono text-ink-muted mt-0.5">
-          Statutory safe-harbor mitigation
+          Negligence maximum on the sample invoice
         </div>
       </div>
 
       <div className="bg-terminal-slate border border-terminal-subtle px-4 py-3 rounded-lg">
         <div className="type-caption-mono uppercase text-ink-muted">
-          Pre-Payment Freight Overbilling Intercepted
+          Freight Overbilling Caught
         </div>
         <div className="type-display-md sm:type-display-lg font-mono text-ink-crimson tabular-nums mt-0.5">
           <RollingNumber value={carrierOverbilling} />
         </div>
         <div className="type-caption-mono text-ink-muted mt-0.5">
-          Withheld prior to cash disbursement
+          Not owed under contract or 46 CFR 541
         </div>
       </div>
 
       <div className="bg-terminal-slate border border-terminal-subtle px-4 py-3 rounded-lg">
         <div className="type-caption-mono uppercase text-ink-muted">
-          99% Duty Drawback Cash Unlocked
+          Duty Drawback Identified
         </div>
         <div className="type-display-md sm:type-display-lg font-mono text-ink-emerald tabular-nums mt-0.5">
           <RollingNumber value={drawbackUnlocked} />
         </div>
         <div className="type-caption-mono text-ink-muted mt-0.5">
-          19 U.S.C. § 1313 direct cash refund
+          99% of duties on matched units, § 1313(j)
         </div>
       </div>
     </div>

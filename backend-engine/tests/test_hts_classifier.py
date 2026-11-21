@@ -34,10 +34,10 @@ def test_landed_cost_mathematical_precision():
 
 
 def test_mpf_statutory_minimum_cap():
-    """Verify MPF is floored at statutory minimum ($34.58 for FY2027 active default, $32.71 for FY2025, $31.67 for FY2024)."""
+    """Formal entry ($5,000): MPF is floored at the statutory minimum ($34.58 for FY2027 active default, $32.71 for FY2025, $31.67 for FY2024)."""
     # FY2027 active default (91 FR 48398)
     breakdown_fy27 = calculate_landed_cost(
-        entered_value=Decimal("1000.00"),
+        entered_value=Decimal("5000.00"),
         duty_rate_ad_valorem=Decimal("0.05"),
         is_ocean_freight=False,
     )
@@ -46,7 +46,7 @@ def test_mpf_statutory_minimum_cap():
 
     # FY2025 backward compatibility
     breakdown_fy25 = calculate_landed_cost(
-        entered_value=Decimal("1000.00"),
+        entered_value=Decimal("5000.00"),
         duty_rate_ad_valorem=Decimal("0.05"),
         is_ocean_freight=False,
         fiscal_year="FY2025",
@@ -55,12 +55,27 @@ def test_mpf_statutory_minimum_cap():
 
     # FY2024 backward compatibility
     breakdown_fy24 = calculate_landed_cost(
-        entered_value=Decimal("1000.00"),
+        entered_value=Decimal("5000.00"),
         duty_rate_ad_valorem=Decimal("0.05"),
         is_ocean_freight=False,
         fiscal_year="FY2024",
     )
     assert breakdown_fy24.mpf_fee == Decimal("31.67")
+
+
+def test_mpf_informal_entry_and_fiscal_year():
+    from datetime import date
+
+    from app.core.statutory_rates import calculate_mpf, fiscal_year_for
+
+    assert calculate_mpf(Decimal("800.00"), "FY2027") == Decimal("2.77")
+    assert calculate_mpf(Decimal("800.00"), "FY2027", informal_method="cbp_prepared") == Decimal("12.45")
+    assert calculate_mpf(Decimal("100000.00"), "FY2026") == Decimal("346.40")
+    assert calculate_mpf(Decimal("5000.00"), "FY2026") == Decimal("33.58")  # FR Doc. 2025-13869
+    assert calculate_mpf(Decimal("900000.00"), "FY2026") == Decimal("651.50")
+    assert calculate_mpf(Decimal("50000.00"), "FY2027", fta_exempt=True) == Decimal("0.00")
+    assert fiscal_year_for(date(2026, 9, 30)) == "FY2026"
+    assert fiscal_year_for(date(2026, 10, 1)) == "FY2027"
 
 
 def test_mpf_statutory_maximum_cap():
@@ -165,7 +180,7 @@ def test_hts_api_endpoints():
 
 
 def test_unclassified_product_requires_human_review():
-    """Verify unclassified merchandise does not default to drone motor and requires broker review (C3)."""
+    """Verify unclassified merchandise does not default to drone motor and requires broker review."""
     engine = HTSClassifierEngine()
     req = ClassificationRequest(
         product_title="Fresh Organic Honeycrisp Apples",
@@ -180,7 +195,7 @@ def test_unclassified_product_requires_human_review():
 
 
 def test_word_boundary_esc_does_not_match_telescope():
-    """Verify word boundary regex prevents substring false matches like 'esc' in 'telescope' (C3)."""
+    """Verify word boundary regex prevents substring false matches like 'esc' in 'telescope'."""
     engine = HTSClassifierEngine()
     req = ClassificationRequest(
         product_title="High Precision Astronomical Telescope",

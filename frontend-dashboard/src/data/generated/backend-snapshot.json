@@ -1,0 +1,1569 @@
+{
+  "aggregate_metrics": {
+    "carrier_overbilling_caught": "1547.50",
+    "drawback_unclaimed_unlocked": "27324.00",
+    "penalty_exposure_avoided": "62500.00"
+  },
+  "as_of_date": "2026-11-20",
+  "assist_items": [
+    {
+      "amortization_method": "units_produced",
+      "anticipated_total_units": 100000,
+      "category": "tooling_dies_molds",
+      "country_of_origin": "CN",
+      "description": "Multi-Cavity Liquid Silicone Injection Tooling & Molds",
+      "id": "AST-2026-001",
+      "is_declared_to_cbp": false,
+      "per_unit_amortized_cost": "1.85",
+      "remaining_unamortized_cost": "157250.00",
+      "supplier_name": "Dongguan Precision Tooling Co., Ltd.",
+      "total_acquisition_cost": "185000.00",
+      "units_shipped_to_date": 15000
+    },
+    {
+      "amortization_method": "units_produced",
+      "anticipated_total_units": 60000,
+      "category": "foreign_engineering_design",
+      "country_of_origin": "JP",
+      "description": "Custom ASIC Firmware & Overseas PCB Micro-Architecture Layout",
+      "id": "AST-2026-002",
+      "is_declared_to_cbp": false,
+      "per_unit_amortized_cost": "2.00",
+      "remaining_unamortized_cost": "100000.00",
+      "supplier_name": "Kyoto Micro-Embedded Labs",
+      "total_acquisition_cost": "120000.00",
+      "units_shipped_to_date": 10000
+    },
+    {
+      "amortization_method": "first_entry",
+      "anticipated_total_units": 50000,
+      "category": "tooling_dies_molds",
+      "country_of_origin": "DE",
+      "description": "Specialized CNC Milling Fixtures & Progressive Stamping Dies",
+      "id": "AST-2026-003",
+      "is_declared_to_cbp": true,
+      "per_unit_amortized_cost": "1.90",
+      "remaining_unamortized_cost": "0.00",
+      "supplier_name": "Bavaria Precision Machining GmbH",
+      "total_acquisition_cost": "95000.00",
+      "units_shipped_to_date": 50000
+    }
+  ],
+  "audits": {
+    "concept_1_customs": {
+      "as_of_date": "2026-11-20",
+      "audit_run_id": "RUN-13C1B7F79E282F115874",
+      "calc_version": "2026.2.0",
+      "concept_id": "concept_1_customs",
+      "discrepancies": [
+        {
+          "bounding_box": {
+            "confidence": 0.82,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 292.4,
+            "x": 69.2,
+            "y": 412.7
+          },
+          "concept_id": "concept_1_customs",
+          "confidence": 0.82,
+          "description": "The invoice is CIF and itemises $4,500.00 of international freight/insurance. These are excluded from transaction value under 19 U.S.C. 1401a(b)(4)(A). If the entry was filed at the CIF total, entered value is overstated by $4,500.00: estimated excess duty of $275.30 at the invoice's value-weighted rate.",
+          "executive_summary": "$4,500.00 of non-dutiable CIF charges may be inflating entered value.",
+          "exposure_amount": "275.30",
+          "financial_blast_radius": "Recoverable overpayment of $275.30 via Post-Summary Correction or protest.",
+          "id": "disc-c1-01",
+          "metadata": {
+            "bbox_source": "document_text",
+            "declared_insurance": "0.00",
+            "effective_duty_rate": "0.0612",
+            "estimated_excess_duty": "275.30",
+            "extraction_source": "fixture",
+            "freight_charge": "4500.00",
+            "incoterm": "CIF LOS ANGELES, CA (U.S.A.)",
+            "layout_anchor": "freight_charge",
+            "layout_verified": true,
+            "non_dutiable_charges": "4500.00",
+            "rule": "19_USC_1401a_b_4_A",
+            "valuation_effect": "overstatement_duty_overpayment"
+          },
+          "severity": "warning",
+          "statutory_code": "19 U.S.C. 1401a(b)(4)(A) / 19 CFR 152.103(a)(5)",
+          "statutory_defense": "Deduct itemised freight/insurance on the entry summary; file a PSC (or a 19 U.S.C. 1514 protest after liquidation).",
+          "title": "CIF Freight and Insurance Must Be Deducted From Transaction Value"
+        },
+        {
+          "bounding_box": {
+            "confidence": 0.99,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 880.0,
+            "x": 60.0,
+            "y": 246.0
+          },
+          "concept_id": "concept_1_customs",
+          "confidence": 0.99,
+          "description": "Line 1: 500 units @ $45.00 = $22500.00, but the line is invoiced at $25500.00. The $3,000.00 difference overstates the value on this line.",
+          "executive_summary": "Line 1 extension is off by $3,000.00.",
+          "exposure_amount": "3000.00",
+          "financial_blast_radius": "Entered value on line 1 overstates by $3,000.00.",
+          "id": "disc-c1-02-line-1",
+          "metadata": {
+            "bbox_source": "document_text",
+            "calculated_total": "22500.00",
+            "extraction_source": "fixture",
+            "layout_anchor": "line_001",
+            "layout_verified": true,
+            "line_number": 1,
+            "stated_total": "25500.00",
+            "variance": "3000.00"
+          },
+          "severity": "critical",
+          "statutory_code": "19 CFR 141.86 / 19 CFR 152.103(a)",
+          "statutory_defense": "Obtain a corrected invoice or debit/credit memo before filing; PSC within 300 days of entry if already filed.",
+          "title": "Invoice Line Item Arithmetic Extension Error"
+        },
+        {
+          "bounding_box": {
+            "confidence": 0.96,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 880.0,
+            "x": 60.0,
+            "y": 276.3
+          },
+          "concept_id": "concept_1_customs",
+          "confidence": 0.96,
+          "description": "High-Speed AI Core Processors declared under HTS 8471.30.0100 (rate 0.0%) appears classifiable under 8542.31.0000 (rate 25.0%). Loss of duty: $31,250.00. Statutory maximum at the assumed culpability (Negligence, 19 U.S.C. 1592(c)(3)): $62,500.00. Domestic value not stated, so the domestic-value cap is not applied.",
+          "executive_summary": "Declared 8471.30.0100 vs 8542.31.0000: $31,250.00 loss of duty; statutory maximum $62,500.00 (negligence).",
+          "exposure_amount": "62500.00",
+          "financial_blast_radius": "$31,250.00 unpaid duty plus up to $62,500.00 civil penalty.",
+          "id": "disc-c1-03",
+          "metadata": {
+            "bbox_source": "document_text",
+            "capital_protected": "56163.78",
+            "culpability_assumed": "negligence",
+            "declared_hts": "8471.30.0100",
+            "domestic_value": null,
+            "domestic_value_cap_applied": false,
+            "dutiable_base": "125000.00",
+            "duty_loss": "31250.00",
+            "extraction_source": "fixture",
+            "interest_basis": "19 U.S.C. 1505, 2024-04-12 to 2026-11-20",
+            "lawful_hts": "8542.31.0000",
+            "layout_anchor": "hts_misclassification",
+            "layout_verified": true,
+            "penalty_basis": "19_USC_1592",
+            "prior_disclosure_max_penalty": "6336.22",
+            "product_description": "High-Speed AI Core Processors",
+            "rate_sources": {
+              "declared": "general 0.00% + no Section 301 measure",
+              "lawful": "general 0.00% + Section 301 List 2 (2018) 25.00%"
+            },
+            "statutory_interest": "6336.22",
+            "statutory_max_by_culpability": {
+              "fraud": null,
+              "gross_negligence": "125000.00",
+              "negligence": "62500.00"
+            }
+          },
+          "severity": "critical",
+          "statutory_code": "19 U.S.C. 1592(c)",
+          "statutory_defense": "Consider a prior disclosure under 19 CFR 162.74 before CBP opens an inquiry: tender the $31,250.00 loss of duty; the penalty is then limited to interest on the loss of duty (about $6,336.22; 19 U.S.C. 1505, 2024-04-12 to 2026-11-20). Culpability is a legal determination for counsel.",
+          "title": "HTS Misclassification & 19 U.S.C. \u00a7 1592 Penalty Exposure"
+        }
+      ],
+      "document_filename": "nightmare_01_customs_ci.pdf",
+      "document_sha256": "d1d82b94ce8b4ed04d5ed4230ae55082f94b6d794a28b00d69fdf6b20e1b0334",
+      "document_url": "/nightmares/nightmare_01_customs_ci.pdf",
+      "engagement_policy": {
+        "assist_amortization_method": "first_entry_lump_sum",
+        "auto_hold_threshold_usd": 10000.0,
+        "commercial_freight_tolerance_usd": 25.0,
+        "fmc_free_time_days": 4,
+        "policy_id": "DEFAULT-FORWARDER-TIER-1",
+        "statutory_floor_enforced": true
+      },
+      "executed_at": "2026-11-20T00:00:00+00:00",
+      "extracted_data": {
+        "as_of_date": "2026-11-20",
+        "country_of_origin": "CN",
+        "country_of_origin_source": "shipper_address",
+        "currency": "USD",
+        "declared_duty_rate": "0.00",
+        "declared_hts": "8471.30.0100",
+        "entry_date": "2024-04-12",
+        "freight_charge": "4500.00",
+        "incoterms": "CIF LOS ANGELES, CA (U.S.A.)",
+        "insurance_charge": "0.00",
+        "invoice_date": "2024-04-12",
+        "invoice_number": "SSAC-2024-89912",
+        "items": [
+          {
+            "description": "DSP Sub-System Controllers",
+            "duty_rate": "0.25",
+            "duty_rate_source": "general 0.00% + Section 301 List 2 (2018) 25.00%",
+            "hts_code": "8542.31.0000",
+            "item_code": "ITEM-001",
+            "line_number": 1,
+            "quantity": "500",
+            "stated_total": "25500.00",
+            "total_price": "25500.00",
+            "unit_price": "45.00"
+          },
+          {
+            "description": "High-Speed AI Core Processors",
+            "duty_rate": "0.00",
+            "duty_rate_source": "general 0.00% + no Section 301 measure",
+            "hts_code": "8471.30.0100",
+            "item_code": "ITEM-002",
+            "line_number": 2,
+            "quantity": "1000",
+            "stated_total": "125000.00",
+            "total_price": "125000.00",
+            "unit_price": "125.00"
+          },
+          {
+            "description": "Bus Interface Transceiver ICs",
+            "duty_rate": "0.25",
+            "duty_rate_source": "general 0.00% + Section 301 List 2 (2018) 25.00%",
+            "hts_code": "8542.39.0000",
+            "item_code": "ITEM-003",
+            "line_number": 3,
+            "quantity": "1000",
+            "stated_total": "15000.00",
+            "total_price": "15000.00",
+            "unit_price": "15.00"
+          }
+        ],
+        "lawful_duty_rate": "0.25",
+        "lawful_hts": "8542.31.0000",
+        "misclassified_value": "125000.00",
+        "product_description": "High-Speed AI Core Processors",
+        "rate_sources": {
+          "declared": "general 0.00% + no Section 301 measure",
+          "lawful": "general 0.00% + Section 301 List 2 (2018) 25.00%"
+        },
+        "unreported_assists": null
+      },
+      "metrics": {
+        "carrier_overbilling_caught": "0.00",
+        "drawback_unclaimed_unlocked": "0.00",
+        "penalty_exposure_avoided": "62500.00"
+      },
+      "missing_fields": [],
+      "offline_fallback_active": true,
+      "quarantine_reasons": [
+        "FINDINGS_REQUIRE_REVIEW"
+      ],
+      "quarantine_status": "QUARANTINED",
+      "ruleset_hash": "e178a5059d1b29bf44c4c00ef0b11a7529f3fea21c40432d942a6381c6bcbb94",
+      "run_digest": "13c1b7f79e282f1158748c58062a50e9c4cc63626d290ba17b038fdebeadd0f3",
+      "source": "fixture",
+      "subtitle": "19 U.S.C. \u00a7 1592 Penalty Exposure & 19 U.S.C. \u00a7 1401a Valuation",
+      "title": "Concept 1: Customs Compliance Firewall"
+    },
+    "concept_2_freight": {
+      "as_of_date": "2026-11-20",
+      "audit_run_id": "RUN-43E2C5D1F9A4F0BB0E33",
+      "calc_version": "2026.2.0",
+      "concept_id": "concept_2_freight",
+      "discrepancies": [
+        {
+          "bounding_box": {
+            "confidence": 0.98,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 880.0,
+            "x": 60.0,
+            "y": 276.3
+          },
+          "concept_id": "concept_2_freight",
+          "confidence": 0.98,
+          "description": "Fuel surcharge billed at 32.50% of base freight ($1,462.50) against a contracted index rate of 24.00% ($1,080.00). Overcharge: $382.50.",
+          "executive_summary": "FSC billed at 32.5% vs 24.0% contracted: $382.50 over.",
+          "exposure_amount": "382.50",
+          "financial_blast_radius": "$382.50 on this invoice.",
+          "id": "disc-c2-01",
+          "metadata": {
+            "bbox_source": "document_text",
+            "billed_fsc": "1462.50",
+            "billed_rate": "32.5%",
+            "contract_rate": "24.0%",
+            "extraction_source": "fixture",
+            "lawful_fsc": "1080.00",
+            "layout_anchor": "fuel_surcharge",
+            "layout_verified": true,
+            "variance": "382.50"
+          },
+          "severity": "critical",
+          "statutory_code": "Service contract fuel clause",
+          "statutory_defense": "Short-pay the variance and dispute it with the carrier, citing the service contract fuel clause.",
+          "title": "Fuel Surcharge Billed Above Contracted Index Rate"
+        },
+        {
+          "bounding_box": {
+            "confidence": 0.9,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 880.0,
+            "x": 60.0,
+            "y": 336.9
+          },
+          "concept_id": "concept_2_freight",
+          "confidence": 0.9,
+          "description": "The carrier billed $285.00 for a chassis split, and no shipper work order or accessorial authorisation is referenced on the invoice. Accessorials are payable only where the service contract or published tariff provides for them.",
+          "executive_summary": "$285.00 accessorial with no authorisation referenced.",
+          "exposure_amount": "285.00",
+          "financial_blast_radius": "$285.00 accessorial charge.",
+          "id": "disc-c2-02",
+          "metadata": {
+            "authorization_present": false,
+            "bbox_source": "document_text",
+            "billed_amount": "285.00",
+            "charge_code": "CHS",
+            "extraction_source": "fixture",
+            "layout_anchor": "chassis_split",
+            "layout_verified": true
+          },
+          "severity": "warning",
+          "statutory_code": "Service contract / tariff accessorial rule",
+          "statutory_defense": "Request the work order or tariff rule; dispute the line if none is produced.",
+          "title": "Chassis Split Billed Without a Work Order"
+        },
+        {
+          "bounding_box": {
+            "confidence": 0.97,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 880.0,
+            "x": 60.0,
+            "y": 367.2
+          },
+          "concept_id": "concept_2_freight",
+          "confidence": 0.97,
+          "description": "Detention of $880.00 was billed, but the container was returned on day 5 of 5 calendar days of free time. Discharge 2024-03-24, out-gate 2024-03-28.",
+          "executive_summary": "Detention charged on day 5 of 5 free days.",
+          "exposure_amount": "880.00",
+          "financial_blast_radius": "$880.00 not owed.",
+          "id": "disc-c2-03",
+          "metadata": {
+            "bbox_source": "document_text",
+            "days_held": 5,
+            "extraction_source": "fixture",
+            "free_days_allowed": 5,
+            "free_time_basis": "calendar",
+            "illegal_detention": "880.00",
+            "layout_anchor": "detention",
+            "layout_verified": true
+          },
+          "severity": "critical",
+          "statutory_code": "46 CFR 545.5 / 46 CFR Part 541",
+          "statutory_defense": "Dispute within the period stated on the invoice (at least 30 days from issuance, 46 CFR 541.8); the billing party must respond within 30 days of the dispute.",
+          "title": "Detention Billed Inside Port Free Time"
+        }
+      ],
+      "document_filename": "nightmare_02_freight_audit.pdf",
+      "document_sha256": "ad8ee9efa26f6095b6e23a75762aa42c8aff7a00cb3d33d19c96d9919e2f5852",
+      "document_url": "/nightmares/nightmare_02_freight_audit.pdf",
+      "engagement_policy": {
+        "assist_amortization_method": "first_entry_lump_sum",
+        "auto_hold_threshold_usd": 10000.0,
+        "commercial_freight_tolerance_usd": 25.0,
+        "fmc_free_time_days": 4,
+        "policy_id": "DEFAULT-FORWARDER-TIER-1",
+        "statutory_floor_enforced": true
+      },
+      "executed_at": "2026-11-20T00:00:00+00:00",
+      "extracted_data": {
+        "as_of_date": "2026-11-20",
+        "authorized_fsc_rate": "0.24",
+        "base_freight": "4500.00",
+        "bill_of_lading": "PACLU-894102914",
+        "billed_fsc_rate": "0.325",
+        "charges_last_incurred": "2024-03-28",
+        "chassis_split_fee": "285.00",
+        "container_number": "PACU9182049",
+        "currency": "USD",
+        "detention_billed": "880.00",
+        "discharge_date": "2024-03-24",
+        "dnd_missing_fields": [],
+        "free_time_basis": "calendar",
+        "has_chassis_work_order": false,
+        "invoice_date": "2024-04-02",
+        "invoice_number": "PACL-FRT-982104",
+        "outgate_date": "2024-03-28",
+        "port_free_days_allowed": 5
+      },
+      "metrics": {
+        "carrier_overbilling_caught": "1547.50",
+        "drawback_unclaimed_unlocked": "0.00",
+        "penalty_exposure_avoided": "0.00"
+      },
+      "missing_fields": [],
+      "offline_fallback_active": true,
+      "quarantine_reasons": [
+        "FINDINGS_REQUIRE_REVIEW"
+      ],
+      "quarantine_status": "QUARANTINED",
+      "ruleset_hash": "e178a5059d1b29bf44c4c00ef0b11a7529f3fea21c40432d942a6381c6bcbb94",
+      "run_digest": "43e2c5d1f9a4f0bb0e33788f9be9cb8a9375e562c5fe243b6a67b0f26824d596",
+      "source": "fixture",
+      "subtitle": "Detention Free Time & 46 CFR Part 541 Billing Requirements",
+      "title": "Concept 2: Pre-Payment Freight Audit"
+    },
+    "concept_3_drawback": {
+      "as_of_date": "2026-11-20",
+      "audit_run_id": "RUN-F27F2A3A44E86454E7B5",
+      "calc_version": "2026.2.0",
+      "concept_id": "concept_3_drawback",
+      "discrepancies": [
+        {
+          "bounding_box": {
+            "confidence": 0.95,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 177.4,
+            "x": 69.2,
+            "y": 189.2
+          },
+          "concept_id": "concept_3_drawback",
+          "confidence": 0.95,
+          "description": "Entry CBP-7501-84920184 paid $27,600.00 on 1,000 units; export B/L BGFU-0941824 shows 1,000 units exported (export and claim within 5 years of import (limit 2029-01-15)). Eligible quantity 1,000 under 19 U.S.C. 1313(j)(1): refund of 99% = $27,324.00, for filing by a licensed customs broker or self-filing importer.",
+          "executive_summary": "1,000 units match import to export: $27,324.00 refundable.",
+          "exposure_amount": "27324.00",
+          "financial_blast_radius": "$27,324.00 refundable on liquidation of the drawback claim.",
+          "id": "disc-c3-01",
+          "metadata": {
+            "basis": "j1",
+            "bbox_source": "document_text",
+            "cash_recovery_ready": "27324.00",
+            "duties_paid": "27600.00",
+            "duty_per_unit": "27.60",
+            "eligible_quantity": "1000",
+            "export_bl": "BGFU-0941824",
+            "extraction_source": "fixture",
+            "import_entry": "CBP-7501-84920184",
+            "layout_anchor": "duties_paid",
+            "layout_verified": true,
+            "service_model": "compliance_auditing_software_for_licensed_brokers_and_self_filers",
+            "statutory_percent": "99.0%",
+            "timeliness": "export and claim within 5 years of import (limit 2029-01-15)"
+          },
+          "severity": "opportunity",
+          "statutory_code": "19 U.S.C. 1313(j)(1)",
+          "statutory_defense": "File a drawback entry (type 47) in ACE; keep import, export and matching records for 3 years after liquidation.",
+          "title": "Unclaimed 99% Statutory Duty Drawback Recovery"
+        },
+        {
+          "bounding_box": {
+            "confidence": 0.95,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 378.7,
+            "x": 288.1,
+            "y": 407.6
+          },
+          "concept_id": "concept_3_drawback",
+          "confidence": 0.95,
+          "description": "Export B/L BGFU-0941824 accounts for 1,000 of 1,000 imported units (100%) on a (j)(1) direct identification basis (19 CFR Part 190).",
+          "executive_summary": "Import and export records reconcile on quantity and basis.",
+          "exposure_amount": "0.00",
+          "financial_blast_radius": "Supports the $27,324.00 claim on CBP review.",
+          "id": "disc-c3-02",
+          "metadata": {
+            "basis": "j1",
+            "bbox_source": "document_text",
+            "carrier": "[carrier not stated]",
+            "destination": "[destination not stated]",
+            "extraction_source": "fixture",
+            "layout_anchor": "export_bl",
+            "layout_verified": true,
+            "quantity_match": "100%"
+          },
+          "severity": "opportunity",
+          "statutory_code": "19 CFR Part 190",
+          "statutory_defense": "Retain the matching record with the claim.",
+          "title": "Export Evidence Matched to Import Entry"
+        }
+      ],
+      "document_filename": "nightmare_03_duty_drawback.pdf",
+      "document_sha256": "ee76a29aa1128ba677bc4bbb4b455adcb0f0ef21f64f5327af1706fec50834ba",
+      "document_url": "/nightmares/nightmare_03_duty_drawback.pdf",
+      "engagement_policy": {
+        "assist_amortization_method": "first_entry_lump_sum",
+        "auto_hold_threshold_usd": 10000.0,
+        "commercial_freight_tolerance_usd": 25.0,
+        "fmc_free_time_days": 4,
+        "policy_id": "DEFAULT-FORWARDER-TIER-1",
+        "statutory_floor_enforced": true
+      },
+      "executed_at": "2026-11-20T00:00:00+00:00",
+      "extracted_data": {
+        "as_of_date": "2026-11-20",
+        "claim_date": "2026-11-20",
+        "currency": "USD",
+        "direct_identification": true,
+        "drawback_percentage": "0.99",
+        "duties_paid": "27600.00",
+        "entry_date": "2024-01-15",
+        "export_bl": "BGFU-0941824",
+        "export_date": "2024-03-10",
+        "exported_quantity": "1000",
+        "import_entry": "CBP-7501-84920184",
+        "import_hts": "8542.31.0001",
+        "imported_quantity": "1000"
+      },
+      "metrics": {
+        "carrier_overbilling_caught": "0.00",
+        "drawback_unclaimed_unlocked": "27324.00",
+        "penalty_exposure_avoided": "0.00"
+      },
+      "missing_fields": [],
+      "offline_fallback_active": true,
+      "quarantine_reasons": [],
+      "quarantine_status": "RELEASED",
+      "ruleset_hash": "e178a5059d1b29bf44c4c00ef0b11a7529f3fea21c40432d942a6381c6bcbb94",
+      "run_digest": "f27f2a3a44e86454e7b5c874f132ff12f36d858a05ad572167f03ae92258ff17",
+      "source": "fixture",
+      "subtitle": "19 U.S.C. \u00a7 1313(j) Unused Merchandise Drawback Matching",
+      "title": "Concept 3: Duty Drawback Harvester"
+    },
+    "concept_4_sanctions": {
+      "as_of_date": "2026-11-20",
+      "audit_run_id": "RUN-5731F2030EBED71D65B8",
+      "calc_version": "2026.2.0",
+      "concept_id": "concept_4_sanctions",
+      "discrepancies": [
+        {
+          "bounding_box": {
+            "confidence": 0.99,
+            "height": 20.6,
+            "page_number": 1,
+            "width": 407.4,
+            "x": 288.1,
+            "y": 114.7
+          },
+          "concept_id": "concept_4_sanctions",
+          "confidence": 0.99,
+          "description": "Target entity Global Micro Electronics Ltd (bis-el-cn-0941) is owned 25% by Victor Petrov and 30% by Rosoboronexport Joint Stock Company. Aggregate blocked ownership is 55%, so the entity is blocked by operation of law under the OFAC 50 Percent Rule. IEEPA maximum for 2026: the greater of $377,700.00 or twice the transaction value (not stated, so the base amount is shown).",
+          "executive_summary": null,
+          "exposure_amount": "377700.00",
+          "financial_blast_radius": null,
+          "id": "disc-c4-01",
+          "metadata": {
+            "bbox_source": "document_text",
+            "blocked_ownership_pct": "55%",
+            "blocking_entities": [
+              {
+                "country": "RU",
+                "owner_id": "node-petrov",
+                "owner_name": "Victor Petrov",
+                "ownership_pct": 25.0,
+                "programs": [
+                  "OFAC SDN (E.O. 14024)",
+                  "EU Regulation 269/2014"
+                ]
+              },
+              {
+                "country": "RU",
+                "owner_id": "node-rosoboron",
+                "owner_name": "Rosoboronexport Joint Stock Company",
+                "ownership_pct": 30.0,
+                "programs": [
+                  "OFAC SDN",
+                  "EU Consolidated Financial Sanctions",
+                  "CAATSA Section 231"
+                ]
+              }
+            ],
+            "compliance_action": "BLOCK_AND_REPORT",
+            "extraction_source": "fixture",
+            "layout_anchor": "entity_id",
+            "layout_verified": true,
+            "penalty_basis": "50_USC_1705",
+            "penalty_year": 2026,
+            "target_id": "bis-el-cn-0941"
+          },
+          "severity": "critical",
+          "statutory_code": "31 CFR 501 / OFAC 50 Percent Rule guidance",
+          "statutory_defense": "Block the property, do not proceed, and report to OFAC within 10 business days (31 CFR 501.603).",
+          "title": "OFAC 50 Percent Rule: Aggregate Blocked Ownership (55%)"
+        }
+      ],
+      "document_filename": "nightmare_04_ofac_registry.pdf",
+      "document_sha256": "2a71ca5d568fec18cf8f3f9e26f6dbe636afd371ab092b7afbfb213d13664392",
+      "document_url": "/nightmares/nightmare_04_ofac_registry.pdf",
+      "engagement_policy": {
+        "assist_amortization_method": "first_entry_lump_sum",
+        "auto_hold_threshold_usd": 10000.0,
+        "commercial_freight_tolerance_usd": 25.0,
+        "fmc_free_time_days": 4,
+        "policy_id": "DEFAULT-FORWARDER-TIER-1",
+        "statutory_floor_enforced": true
+      },
+      "executed_at": "2026-11-20T00:00:00+00:00",
+      "extracted_data": {
+        "as_of_date": "2026-11-20",
+        "entity_id": "bis-el-cn-0941",
+        "name": "Global Micro Electronics Ltd",
+        "target_id": "bis-el-cn-0941",
+        "transaction_value": null
+      },
+      "metrics": {
+        "carrier_overbilling_caught": "0.00",
+        "drawback_unclaimed_unlocked": "0.00",
+        "penalty_exposure_avoided": "377700.00"
+      },
+      "missing_fields": [],
+      "offline_fallback_active": true,
+      "quarantine_reasons": [
+        "FINDINGS_REQUIRE_REVIEW"
+      ],
+      "quarantine_status": "QUARANTINED",
+      "ruleset_hash": "e178a5059d1b29bf44c4c00ef0b11a7529f3fea21c40432d942a6381c6bcbb94",
+      "run_digest": "5731f2030ebed71d65b83f983da9a982ba0524baee25f5fa906370455f42016d",
+      "source": "fixture",
+      "subtitle": "31 CFR Chapter V Blocked-Ownership Aggregation & BIS Entity List",
+      "title": "Concept 4: OFAC 50% Rule & Entity Resolution"
+    },
+    "concept_clean_fob": {
+      "as_of_date": "2026-11-20",
+      "audit_run_id": "RUN-2F938BFD8FB4D74A974D",
+      "calc_version": "2026.2.0",
+      "concept_id": "concept_clean_fob",
+      "discrepancies": [],
+      "document_filename": "clean_01_customs_fob.pdf",
+      "document_sha256": "4bdffcd012285ee7512fd411f5766cfe65421b1bc3c16c5429b350c39612532a",
+      "document_url": "/nightmares/clean_01_customs_fob.pdf",
+      "engagement_policy": {
+        "assist_amortization_method": "first_entry_lump_sum",
+        "auto_hold_threshold_usd": 10000.0,
+        "commercial_freight_tolerance_usd": 25.0,
+        "fmc_free_time_days": 4,
+        "policy_id": "DEFAULT-FORWARDER-TIER-1",
+        "statutory_floor_enforced": true
+      },
+      "executed_at": "2026-11-20T00:00:00+00:00",
+      "extracted_data": {
+        "as_of_date": "2026-11-20",
+        "country_of_origin": "CN",
+        "country_of_origin_source": "shipper_address",
+        "currency": "USD",
+        "declared_duty_rate": null,
+        "declared_hts": null,
+        "entry_date": "2024-05-18",
+        "freight_charge": null,
+        "incoterms": "FOB YANTIAN, CHINA (VERIFIED)",
+        "insurance_charge": null,
+        "invoice_date": "2024-05-18",
+        "invoice_number": "SSAC-2024-CLN-1048",
+        "items": [
+          {
+            "description": "ARM Cortex-M4 Microcontroller Processors",
+            "duty_rate": "0.25",
+            "duty_rate_source": "general 0.00% + Section 301 List 2 (2018) 25.00%",
+            "hts_code": "8542.31.0001",
+            "item_code": "ITEM-001",
+            "line_number": 1,
+            "quantity": "500",
+            "stated_total": "22500.00",
+            "total_price": "22500.00",
+            "unit_price": "45.00"
+          },
+          {
+            "description": "High-Performance Neural Tensor Accelerators",
+            "duty_rate": "0.25",
+            "duty_rate_source": "general 0.00% + Section 301 List 2 (2018) 25.00%",
+            "hts_code": "8542.31.0001",
+            "item_code": "ITEM-002",
+            "line_number": 2,
+            "quantity": "200",
+            "stated_total": "70000.00",
+            "total_price": "70000.00",
+            "unit_price": "350.00"
+          },
+          {
+            "description": "High-Efficiency Switching Power Supplies",
+            "duty_rate": "0.25",
+            "duty_rate_source": "general 0.00% + Section 301 List 3 25.00%",
+            "hts_code": "8504.40.9580",
+            "item_code": "ITEM-003",
+            "line_number": 3,
+            "quantity": "1000",
+            "stated_total": "25000.00",
+            "total_price": "25000.00",
+            "unit_price": "25.00"
+          }
+        ],
+        "lawful_duty_rate": null,
+        "lawful_hts": null,
+        "misclassified_value": null,
+        "product_description": null,
+        "rate_sources": null,
+        "unreported_assists": "0.00"
+      },
+      "metrics": {
+        "carrier_overbilling_caught": "0.00",
+        "drawback_unclaimed_unlocked": "0.00",
+        "penalty_exposure_avoided": "0.00"
+      },
+      "missing_fields": [],
+      "offline_fallback_active": true,
+      "quarantine_reasons": [],
+      "quarantine_status": "RELEASED",
+      "ruleset_hash": "e178a5059d1b29bf44c4c00ef0b11a7529f3fea21c40432d942a6381c6bcbb94",
+      "run_digest": "2f938bfd8fb4d74a974d046c1c9d63474b254ecb27d7e22ee02b63a188eca848",
+      "source": "fixture",
+      "subtitle": "Baseline Clean Fixture (Demo) \u2022 No Valuation or Classification Findings",
+      "title": "Clean Production Invoice: Verified FOB Terms"
+    }
+  },
+  "cargowise": {
+    "concept_1_customs": {
+      "audit_run_id": "RUN-13C1B7F79E282F115874",
+      "concept_id": "concept_1_customs",
+      "diff_summary": [
+        {
+          "node": "CommercialInvoiceLine[1]/CustomsValue",
+          "raw": "25500.00",
+          "reconciled": "22500.00",
+          "status": "CORRECTED",
+          "statute": "19 CFR 141.86"
+        },
+        {
+          "node": "CommercialInvoiceLine[2]/HarmonizedCode",
+          "raw": "8471.30.0100",
+          "reconciled": "8542.31.0000",
+          "status": "RECLASSIFICATION_PROPOSED",
+          "statute": "GRI 1 / Note 12(b) to Chapter 85"
+        },
+        {
+          "node": "InvoiceAmount",
+          "raw": "170000.00",
+          "reconciled": "162500.00",
+          "status": "NON_DUTIABLE_CHARGES_DEDUCTED",
+          "statute": "19 U.S.C. 1401a(b)(4)(A)"
+        }
+      ],
+      "raw_unaudited_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<UniversalInterchange xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n  <Header>\n    <SenderID>TRADESYSTEMS_PREAUDIT</SenderID>\n    <RecipientID>CW1_EADAPTOR_SANDBOX</RecipientID>\n    <CorrelationID>CW-82EC4175962641E1</CorrelationID>\n  </Header>\n  <Body>\n    <UniversalShipment xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n      <Shipment>\n        <DataContext>\n          <DataTargetCollection>\n            <DataTarget>\n              <Type>ForwardingShipment</Type>\n              <Key>S-13C1B7F79E</Key>\n            </DataTarget>\n            <DataTarget>\n              <Type>CustomsDeclaration</Type>\n              <Key>B-13C1B7F79E</Key>\n            </DataTarget>\n          </DataTargetCollection>\n          <Company>\n            <Code>CPH</Code>\n          </Company>\n          <EnterpriseID>TRN</EnterpriseID>\n          <ServerID>A04</ServerID>\n        </DataContext>\n        <PortOfOrigin>\n          <Code>CNYTN</Code>\n          <Name>Yantian</Name>\n        </PortOfOrigin>\n        <PortOfDestination>\n          <Code>USLAX</Code>\n          <Name>Los Angeles / Long Beach</Name>\n        </PortOfDestination>\n        <OrganizationAddressCollection>\n          <OrganizationAddress>\n            <AddressType>ConsignorDocumentaryAddress</AddressType>\n            <OrganizationCode>TSTORGCHC</OrganizationCode>\n          </OrganizationAddress>\n        </OrganizationAddressCollection>\n        <CommercialInvoiceCollection>\n          <CommercialInvoice>\n            <InvoiceNumber>SSAC-2024-89912</InvoiceNumber>\n            <Incoterm>\n              <Code>CIF</Code>\n            </Incoterm>\n            <InvoiceAmount Currency=\"USD\">170000.00</InvoiceAmount>\n            <InsuranceAmount Currency=\"USD\">0.00</InsuranceAmount>\n            <CommercialInvoiceLineCollection>\n              <CommercialInvoiceLine>\n                <LineNumber>1</LineNumber>\n                <Description>DSP Sub-System Controllers</Description>\n                <HarmonizedCode>8542.31.0000</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">25500.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>2</LineNumber>\n                <Description>High-Speed AI Core Processors</Description>\n                <HarmonizedCode>8471.30.0100</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">125000.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>3</LineNumber>\n                <Description>Bus Interface Transceiver ICs</Description>\n                <HarmonizedCode>8542.39.0000</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">15000.00</CustomsValue>\n              </CommercialInvoiceLine>\n            </CommercialInvoiceLineCollection>\n          </CommercialInvoice>\n        </CommercialInvoiceCollection>\n        <CustomizedFieldCollection>\n          <CustomizedField>\n            <Key>PreAuditVerificationStatus</Key>\n            <DataType>String</DataType>\n            <Value>UNVERIFIED_RAW_INGEST</Value>\n          </CustomizedField>\n          <CustomizedField>\n            <Key>PenaltyExposureMitigated</Key>\n            <DataType>String</DataType>\n            <Value>UNAUDITED</Value>\n          </CustomizedField>\n        </CustomizedFieldCollection>\n      </Shipment>\n    </UniversalShipment>\n  </Body>\n</UniversalInterchange>\n",
+      "reconciled_lawful_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<UniversalInterchange xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n  <Header>\n    <SenderID>TRADESYSTEMS_PREAUDIT</SenderID>\n    <RecipientID>CW1_EADAPTOR_SANDBOX</RecipientID>\n    <CorrelationID>CW-109C12A0FF67430B</CorrelationID>\n  </Header>\n  <Body>\n    <UniversalShipment xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n      <Shipment>\n        <DataContext>\n          <DataTargetCollection>\n            <DataTarget>\n              <Type>ForwardingShipment</Type>\n              <Key>S-13C1B7F79E</Key>\n            </DataTarget>\n            <DataTarget>\n              <Type>CustomsDeclaration</Type>\n              <Key>B-13C1B7F79E</Key>\n            </DataTarget>\n          </DataTargetCollection>\n          <Company>\n            <Code>CPH</Code>\n          </Company>\n          <EnterpriseID>TRN</EnterpriseID>\n          <ServerID>A04</ServerID>\n        </DataContext>\n        <PortOfOrigin>\n          <Code>CNYTN</Code>\n          <Name>Yantian</Name>\n        </PortOfOrigin>\n        <PortOfDestination>\n          <Code>USLAX</Code>\n          <Name>Los Angeles / Long Beach</Name>\n        </PortOfDestination>\n        <OrganizationAddressCollection>\n          <OrganizationAddress>\n            <AddressType>ConsignorDocumentaryAddress</AddressType>\n            <OrganizationCode>TSTORGCHC</OrganizationCode>\n          </OrganizationAddress>\n        </OrganizationAddressCollection>\n        <CommercialInvoiceCollection>\n          <CommercialInvoice>\n            <InvoiceNumber>SSAC-2024-89912</InvoiceNumber>\n            <Incoterm>\n              <Code>CIF</Code>\n            </Incoterm>\n            <InvoiceAmount Currency=\"USD\">162500.00</InvoiceAmount>\n            <InsuranceAmount Currency=\"USD\">0.00</InsuranceAmount>\n            <CommercialInvoiceLineCollection>\n              <CommercialInvoiceLine>\n                <LineNumber>1</LineNumber>\n                <Description>DSP Sub-System Controllers</Description>\n                <HarmonizedCode>8542.31.0000</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">22500.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>2</LineNumber>\n                <Description>High-Speed AI Core Processors</Description>\n                <HarmonizedCode>8542.31.0000</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">125000.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>3</LineNumber>\n                <Description>Bus Interface Transceiver ICs</Description>\n                <HarmonizedCode>8542.39.0000</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">15000.00</CustomsValue>\n              </CommercialInvoiceLine>\n            </CommercialInvoiceLineCollection>\n          </CommercialInvoice>\n        </CommercialInvoiceCollection>\n        <CustomizedFieldCollection>\n          <CustomizedField>\n            <Key>PreAuditVerificationStatus</Key>\n            <DataType>String</DataType>\n            <Value>RECONCILED</Value>\n          </CustomizedField>\n          <CustomizedField>\n            <Key>PenaltyExposureMitigated</Key>\n            <DataType>String</DataType>\n            <Value>EXPOSURE_FLAGGED_FOR_REVIEW</Value>\n          </CustomizedField>\n        </CustomizedFieldCollection>\n      </Shipment>\n    </UniversalShipment>\n  </Body>\n</UniversalInterchange>\n",
+      "schema_validation": "structural subset (in-repo XSD); not validated against WiseTech-published schemas",
+      "schema_version": "1.1",
+      "status": "HELD_PENDING_REVIEW"
+    },
+    "concept_2_freight": {
+      "audit_run_id": "RUN-43E2C5D1F9A4F0BB0E33",
+      "concept_id": "concept_2_freight",
+      "diff_summary": [
+        {
+          "node": "InvoiceAmount",
+          "raw": "7127.50",
+          "reconciled": "5580.00",
+          "status": "OVERBILLING_DISPUTED",
+          "statute": "Service contract / 46 CFR Part 541"
+        }
+      ],
+      "raw_unaudited_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<UniversalInterchange xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n  <Header>\n    <SenderID>TRADESYSTEMS_PREAUDIT</SenderID>\n    <RecipientID>CW1_EADAPTOR_SANDBOX</RecipientID>\n    <CorrelationID>CW-99DFD93658391A87</CorrelationID>\n  </Header>\n  <Body>\n    <UniversalShipment xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n      <Shipment>\n        <DataContext>\n          <DataTargetCollection>\n            <DataTarget>\n              <Type>ForwardingShipment</Type>\n              <Key>S-43E2C5D1F9</Key>\n            </DataTarget>\n            <DataTarget>\n              <Type>CustomsDeclaration</Type>\n              <Key>B-43E2C5D1F9</Key>\n            </DataTarget>\n          </DataTargetCollection>\n          <Company>\n            <Code>CPH</Code>\n          </Company>\n          <EnterpriseID>TRN</EnterpriseID>\n          <ServerID>A04</ServerID>\n        </DataContext>\n        <PortOfOrigin>\n          <Code>CNYTN</Code>\n          <Name>Yantian</Name>\n        </PortOfOrigin>\n        <PortOfDestination>\n          <Code>USLAX</Code>\n          <Name>Los Angeles</Name>\n        </PortOfDestination>\n        <OrganizationAddressCollection>\n          <OrganizationAddress>\n            <AddressType>ConsignorDocumentaryAddress</AddressType>\n            <OrganizationCode>TSTORGCHC</OrganizationCode>\n          </OrganizationAddress>\n        </OrganizationAddressCollection>\n        <CommercialInvoiceCollection>\n          <CommercialInvoice>\n            <InvoiceNumber>PACL-FRT-982104</InvoiceNumber>\n            <Incoterm>\n              <Code>FOB</Code>\n            </Incoterm>\n            <InvoiceAmount Currency=\"USD\">7127.50</InvoiceAmount>\n            <InsuranceAmount Currency=\"USD\">0.00</InsuranceAmount>\n            <CommercialInvoiceLineCollection>\n              <CommercialInvoiceLine>\n                <LineNumber>1</LineNumber>\n                <Description>Ocean freight and audited surcharges</Description>\n                <HarmonizedCode/>\n                <CustomsValue Currency=\"USD\">4500.00</CustomsValue>\n              </CommercialInvoiceLine>\n            </CommercialInvoiceLineCollection>\n          </CommercialInvoice>\n        </CommercialInvoiceCollection>\n        <CustomizedFieldCollection>\n          <CustomizedField>\n            <Key>PreAuditVerificationStatus</Key>\n            <DataType>String</DataType>\n            <Value>UNVERIFIED_RAW_INGEST</Value>\n          </CustomizedField>\n          <CustomizedField>\n            <Key>PenaltyExposureMitigated</Key>\n            <DataType>String</DataType>\n            <Value>UNAUDITED</Value>\n          </CustomizedField>\n        </CustomizedFieldCollection>\n      </Shipment>\n    </UniversalShipment>\n  </Body>\n</UniversalInterchange>\n",
+      "reconciled_lawful_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<UniversalInterchange xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n  <Header>\n    <SenderID>TRADESYSTEMS_PREAUDIT</SenderID>\n    <RecipientID>CW1_EADAPTOR_SANDBOX</RecipientID>\n    <CorrelationID>CW-9D9E35ECF0202FF5</CorrelationID>\n  </Header>\n  <Body>\n    <UniversalShipment xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n      <Shipment>\n        <DataContext>\n          <DataTargetCollection>\n            <DataTarget>\n              <Type>ForwardingShipment</Type>\n              <Key>S-43E2C5D1F9</Key>\n            </DataTarget>\n            <DataTarget>\n              <Type>CustomsDeclaration</Type>\n              <Key>B-43E2C5D1F9</Key>\n            </DataTarget>\n          </DataTargetCollection>\n          <Company>\n            <Code>CPH</Code>\n          </Company>\n          <EnterpriseID>TRN</EnterpriseID>\n          <ServerID>A04</ServerID>\n        </DataContext>\n        <PortOfOrigin>\n          <Code>CNYTN</Code>\n          <Name>Yantian</Name>\n        </PortOfOrigin>\n        <PortOfDestination>\n          <Code>USLAX</Code>\n          <Name>Los Angeles</Name>\n        </PortOfDestination>\n        <OrganizationAddressCollection>\n          <OrganizationAddress>\n            <AddressType>ConsignorDocumentaryAddress</AddressType>\n            <OrganizationCode>TSTORGCHC</OrganizationCode>\n          </OrganizationAddress>\n        </OrganizationAddressCollection>\n        <CommercialInvoiceCollection>\n          <CommercialInvoice>\n            <InvoiceNumber>PACL-FRT-982104</InvoiceNumber>\n            <Incoterm>\n              <Code>FOB</Code>\n            </Incoterm>\n            <InvoiceAmount Currency=\"USD\">5580.00</InvoiceAmount>\n            <InsuranceAmount Currency=\"USD\">0.00</InsuranceAmount>\n            <CommercialInvoiceLineCollection>\n              <CommercialInvoiceLine>\n                <LineNumber>1</LineNumber>\n                <Description>Ocean freight and audited surcharges</Description>\n                <HarmonizedCode/>\n                <CustomsValue Currency=\"USD\">4500.00</CustomsValue>\n              </CommercialInvoiceLine>\n            </CommercialInvoiceLineCollection>\n          </CommercialInvoice>\n        </CommercialInvoiceCollection>\n        <CustomizedFieldCollection>\n          <CustomizedField>\n            <Key>PreAuditVerificationStatus</Key>\n            <DataType>String</DataType>\n            <Value>RECONCILED</Value>\n          </CustomizedField>\n          <CustomizedField>\n            <Key>PenaltyExposureMitigated</Key>\n            <DataType>String</DataType>\n            <Value>OVERBILLING_DISPUTED</Value>\n          </CustomizedField>\n        </CustomizedFieldCollection>\n      </Shipment>\n    </UniversalShipment>\n  </Body>\n</UniversalInterchange>\n",
+      "schema_validation": "structural subset (in-repo XSD); not validated against WiseTech-published schemas",
+      "schema_version": "1.1",
+      "status": "HELD_PENDING_REVIEW"
+    },
+    "concept_3_drawback": {
+      "audit_run_id": "RUN-F27F2A3A44E86454E7B5",
+      "concept_id": "concept_3_drawback",
+      "diff_summary": [],
+      "raw_unaudited_xml": "",
+      "reconciled_lawful_xml": "",
+      "schema_validation": "structural subset (in-repo XSD); not validated against WiseTech-published schemas",
+      "schema_version": "1.1",
+      "status": "NOT_APPLICABLE"
+    },
+    "concept_4_sanctions": {
+      "audit_run_id": "RUN-5731F2030EBED71D65B8",
+      "concept_id": "concept_4_sanctions",
+      "diff_summary": [],
+      "raw_unaudited_xml": "",
+      "reconciled_lawful_xml": "",
+      "schema_validation": "structural subset (in-repo XSD); not validated against WiseTech-published schemas",
+      "schema_version": "1.1",
+      "status": "BLOCKED_DO_NOT_TRANSMIT"
+    },
+    "concept_clean_fob": {
+      "audit_run_id": "RUN-2F938BFD8FB4D74A974D",
+      "concept_id": "concept_clean_fob",
+      "diff_summary": [],
+      "raw_unaudited_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<UniversalInterchange xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n  <Header>\n    <SenderID>TRADESYSTEMS_PREAUDIT</SenderID>\n    <RecipientID>CW1_EADAPTOR_SANDBOX</RecipientID>\n    <CorrelationID>CW-E1D3A8B45590510B</CorrelationID>\n  </Header>\n  <Body>\n    <UniversalShipment xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n      <Shipment>\n        <DataContext>\n          <DataTargetCollection>\n            <DataTarget>\n              <Type>ForwardingShipment</Type>\n              <Key>S-2F938BFD8F</Key>\n            </DataTarget>\n            <DataTarget>\n              <Type>CustomsDeclaration</Type>\n              <Key>B-2F938BFD8F</Key>\n            </DataTarget>\n          </DataTargetCollection>\n          <Company>\n            <Code>CPH</Code>\n          </Company>\n          <EnterpriseID>TRN</EnterpriseID>\n          <ServerID>A04</ServerID>\n        </DataContext>\n        <PortOfOrigin>\n          <Code>CNYTN</Code>\n          <Name>Yantian</Name>\n        </PortOfOrigin>\n        <PortOfDestination>\n          <Code>USLAX</Code>\n          <Name>Los Angeles / Long Beach</Name>\n        </PortOfDestination>\n        <OrganizationAddressCollection>\n          <OrganizationAddress>\n            <AddressType>ConsignorDocumentaryAddress</AddressType>\n            <OrganizationCode>TSTORGCHC</OrganizationCode>\n          </OrganizationAddress>\n        </OrganizationAddressCollection>\n        <CommercialInvoiceCollection>\n          <CommercialInvoice>\n            <InvoiceNumber>SSAC-2024-CLN-1048</InvoiceNumber>\n            <Incoterm>\n              <Code>FOB</Code>\n            </Incoterm>\n            <InvoiceAmount Currency=\"USD\">117500.00</InvoiceAmount>\n            <InsuranceAmount Currency=\"USD\">0.00</InsuranceAmount>\n            <CommercialInvoiceLineCollection>\n              <CommercialInvoiceLine>\n                <LineNumber>1</LineNumber>\n                <Description>ARM Cortex-M4 Microcontroller Processors</Description>\n                <HarmonizedCode>8542.31.0001</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">22500.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>2</LineNumber>\n                <Description>High-Performance Neural Tensor Accelerators</Description>\n                <HarmonizedCode>8542.31.0001</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">70000.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>3</LineNumber>\n                <Description>High-Efficiency Switching Power Supplies</Description>\n                <HarmonizedCode>8504.40.9580</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">25000.00</CustomsValue>\n              </CommercialInvoiceLine>\n            </CommercialInvoiceLineCollection>\n          </CommercialInvoice>\n        </CommercialInvoiceCollection>\n        <CustomizedFieldCollection>\n          <CustomizedField>\n            <Key>PreAuditVerificationStatus</Key>\n            <DataType>String</DataType>\n            <Value>UNVERIFIED_RAW_INGEST</Value>\n          </CustomizedField>\n          <CustomizedField>\n            <Key>PenaltyExposureMitigated</Key>\n            <DataType>String</DataType>\n            <Value>UNAUDITED</Value>\n          </CustomizedField>\n        </CustomizedFieldCollection>\n      </Shipment>\n    </UniversalShipment>\n  </Body>\n</UniversalInterchange>\n",
+      "reconciled_lawful_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<UniversalInterchange xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n  <Header>\n    <SenderID>TRADESYSTEMS_PREAUDIT</SenderID>\n    <RecipientID>CW1_EADAPTOR_SANDBOX</RecipientID>\n    <CorrelationID>CW-E1D3A8B45590510B</CorrelationID>\n  </Header>\n  <Body>\n    <UniversalShipment xmlns=\"http://www.cargowise.com/Schemas/Universal/2011/11\" version=\"1.1\">\n      <Shipment>\n        <DataContext>\n          <DataTargetCollection>\n            <DataTarget>\n              <Type>ForwardingShipment</Type>\n              <Key>S-2F938BFD8F</Key>\n            </DataTarget>\n            <DataTarget>\n              <Type>CustomsDeclaration</Type>\n              <Key>B-2F938BFD8F</Key>\n            </DataTarget>\n          </DataTargetCollection>\n          <Company>\n            <Code>CPH</Code>\n          </Company>\n          <EnterpriseID>TRN</EnterpriseID>\n          <ServerID>A04</ServerID>\n        </DataContext>\n        <PortOfOrigin>\n          <Code>CNYTN</Code>\n          <Name>Yantian</Name>\n        </PortOfOrigin>\n        <PortOfDestination>\n          <Code>USLAX</Code>\n          <Name>Los Angeles / Long Beach</Name>\n        </PortOfDestination>\n        <OrganizationAddressCollection>\n          <OrganizationAddress>\n            <AddressType>ConsignorDocumentaryAddress</AddressType>\n            <OrganizationCode>TSTORGCHC</OrganizationCode>\n          </OrganizationAddress>\n        </OrganizationAddressCollection>\n        <CommercialInvoiceCollection>\n          <CommercialInvoice>\n            <InvoiceNumber>SSAC-2024-CLN-1048</InvoiceNumber>\n            <Incoterm>\n              <Code>FOB</Code>\n            </Incoterm>\n            <InvoiceAmount Currency=\"USD\">117500.00</InvoiceAmount>\n            <InsuranceAmount Currency=\"USD\">0.00</InsuranceAmount>\n            <CommercialInvoiceLineCollection>\n              <CommercialInvoiceLine>\n                <LineNumber>1</LineNumber>\n                <Description>ARM Cortex-M4 Microcontroller Processors</Description>\n                <HarmonizedCode>8542.31.0001</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">22500.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>2</LineNumber>\n                <Description>High-Performance Neural Tensor Accelerators</Description>\n                <HarmonizedCode>8542.31.0001</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">70000.00</CustomsValue>\n              </CommercialInvoiceLine>\n              <CommercialInvoiceLine>\n                <LineNumber>3</LineNumber>\n                <Description>High-Efficiency Switching Power Supplies</Description>\n                <HarmonizedCode>8504.40.9580</HarmonizedCode>\n                <CustomsValue Currency=\"USD\">25000.00</CustomsValue>\n              </CommercialInvoiceLine>\n            </CommercialInvoiceLineCollection>\n          </CommercialInvoice>\n        </CommercialInvoiceCollection>\n        <CustomizedFieldCollection>\n          <CustomizedField>\n            <Key>PreAuditVerificationStatus</Key>\n            <DataType>String</DataType>\n            <Value>CLEARED_NO_EXCEPTIONS</Value>\n          </CustomizedField>\n          <CustomizedField>\n            <Key>PenaltyExposureMitigated</Key>\n            <DataType>String</DataType>\n            <Value>NO_EXCEPTIONS</Value>\n          </CustomizedField>\n        </CustomizedFieldCollection>\n      </Shipment>\n    </UniversalShipment>\n  </Body>\n</UniversalInterchange>\n",
+      "schema_validation": "structural subset (in-repo XSD); not validated against WiseTech-published schemas",
+      "schema_version": "1.1",
+      "status": "READY_FOR_INGESTION"
+    }
+  },
+  "generated_from": "backend-engine (scripts/export_frontend_snapshot.py)",
+  "hts_presets": {
+    "drone_motor": {
+      "chapter_notes_cited": [
+        "Section XVI Note 2 (Classification of Parts of Machines)",
+        "Chapter 85 Note 2 (Electric Motors & Generators)",
+        "WCO Explanatory Notes to Heading 85.01"
+      ],
+      "classified_hts_code": "8501.31.8000",
+      "confidence": 0.94,
+      "country_of_origin": "CN",
+      "declared_hts_code": null,
+      "gri_path": [
+        {
+          "competing_candidates": [
+            "Chapter 84 (Machinery and Mechanical Appliances)",
+            "Chapter 88 (Aircraft & Drones)"
+          ],
+          "confidence": 0.99,
+          "description": "Electrical machinery and equipment and parts thereof; sound recorders and reproducers",
+          "heading_or_subheading": "Chapter 85",
+          "legal_rationale": "Merchandise is primarily an electro-mechanical energy conversion apparatus covered by Chapter 85 terms.",
+          "passed": true,
+          "step_rule": "GRI 1"
+        },
+        {
+          "competing_candidates": [
+            "8504.40 (Static Converters / Speed Controllers)",
+            "8543.70 (Electrical machines with individual functions)"
+          ],
+          "confidence": 0.93,
+          "description": "Electric motors and generators (excluding generating sets)",
+          "heading_or_subheading": "Heading 8501",
+          "legal_rationale": "Composite article of an electric motor and speed controller. Under GRI 3(b), the motor provides the essential character of motive propulsion.",
+          "passed": true,
+          "step_rule": "GRI 1 / GRI 3(b)"
+        },
+        {
+          "competing_candidates": [
+            "8501.32 (Output exceeding 750 W but not exceeding 75 kW)"
+          ],
+          "confidence": 0.96,
+          "description": "Other DC motors; DC generators: Of an output not exceeding 750 W",
+          "heading_or_subheading": "Subheading 8501.31",
+          "legal_rationale": "Rated continuous output is 480 Watts, strictly satisfying the under-750W threshold of subheading 8501.31.",
+          "passed": true,
+          "step_rule": "GRI 6"
+        },
+        {
+          "competing_candidates": [
+            "8501.31.4000 (Motors of under 18.65 W)"
+          ],
+          "confidence": 0.95,
+          "description": "Other DC motors of an output not exceeding 750 W: Other: Brushless",
+          "heading_or_subheading": "8501.31.8000",
+          "legal_rationale": "Permanent magnet brushless architecture satisfies statistical annotation 8000.",
+          "passed": true,
+          "step_rule": "Statutory Suffix"
+        }
+      ],
+      "input_description": "High precision commercial specification for US Customs entry filing.",
+      "item_id": "hts-drone_motor",
+      "landed_cost": {
+        "customs_duty": "600.00",
+        "duty_rate_ad_valorem": "0.024",
+        "entered_value": "25000.00",
+        "fiscal_year": "FY2027",
+        "freight_and_insurance": "1500.00",
+        "hmf_fee": "31.25",
+        "hmf_rate": "0.00125",
+        "mpf_fee": "86.60",
+        "mpf_max_cap": "670.86",
+        "mpf_min_cap": "34.58",
+        "mpf_rate": "0.003464",
+        "section_301_duty": "6250.00",
+        "section_301_rate": "0.25",
+        "section_301_subheading": "9903.88.01",
+        "total_customs_cost": "6967.85",
+        "total_landed_cost": "33467.85"
+      },
+      "product_title": "Industrial Brushless DC Drone Motor with Integrated Electronic Speed Controller (ESC)",
+      "requires_human_review": false
+    },
+    "ev_battery_pack": {
+      "chapter_notes_cited": [
+        "Chapter 85 Note 2",
+        "US Note 20 to Subchapter III, Chapter 99 (Section 301 Tariff on Chinese Lithium-Ion Accumulators)"
+      ],
+      "classified_hts_code": "8507.60.0000",
+      "confidence": 0.91,
+      "country_of_origin": "CN",
+      "declared_hts_code": null,
+      "gri_path": [
+        {
+          "competing_candidates": [
+            "8504.40 (Power Supplies)"
+          ],
+          "confidence": 0.98,
+          "description": "Electric storage batteries, including separators therefor, whether or not rectangular",
+          "heading_or_subheading": "Heading 8507",
+          "legal_rationale": "Heading 8507 explicitly describes electric storage batteries and accumulators.",
+          "passed": true,
+          "step_rule": "GRI 1"
+        },
+        {
+          "competing_candidates": [
+            "8507.20 (Other lead-acid accumulators)",
+            "8507.80 (Other storage batteries)"
+          ],
+          "confidence": 0.95,
+          "description": "Lithium-ion accumulators",
+          "heading_or_subheading": "Subheading 8507.60",
+          "legal_rationale": "Electrochemical cell chemistry is based on lithium iron phosphate intercalation.",
+          "passed": true,
+          "step_rule": "GRI 6"
+        },
+        {
+          "competing_candidates": [],
+          "confidence": 0.92,
+          "description": "Lithium-ion accumulators (including battery packs and modules)",
+          "heading_or_subheading": "8507.60.0000",
+          "legal_rationale": "Complete modular pack assembly classified under 8507.60.0000.",
+          "passed": true,
+          "step_rule": "Statutory Suffix"
+        }
+      ],
+      "input_description": "High precision commercial specification for US Customs entry filing.",
+      "item_id": "hts-ev_battery_pack",
+      "landed_cost": {
+        "customs_duty": "850.00",
+        "duty_rate_ad_valorem": "0.034",
+        "entered_value": "25000.00",
+        "fiscal_year": "FY2027",
+        "freight_and_insurance": "1500.00",
+        "hmf_fee": "31.25",
+        "hmf_rate": "0.00125",
+        "mpf_fee": "86.60",
+        "mpf_max_cap": "670.86",
+        "mpf_min_cap": "34.58",
+        "mpf_rate": "0.003464",
+        "section_301_duty": "6250.00",
+        "section_301_rate": "0.25",
+        "section_301_subheading": "USTR four-year review modification, FR Doc. 2024-21217 (18 Sep 2024)",
+        "total_customs_cost": "7217.85",
+        "total_landed_cost": "33717.85"
+      },
+      "product_title": "Lithium Iron Phosphate (LiFePO4) Battery Module with Battery Management System (BMS)",
+      "requires_human_review": false
+    },
+    "server_accelerator": {
+      "chapter_notes_cited": [
+        "Chapter 84 Note 5(E) (Exclusion of machines incorporating ADP units)",
+        "Chapter 85 Note 9(b)(i) (Definition of Multicomponent Integrated Circuits MCOs)",
+        "WTO Information Technology Agreement (ITA-1) Zero-Duty Concession"
+      ],
+      "classified_hts_code": "8542.31.0001",
+      "confidence": 0.96,
+      "country_of_origin": "CN",
+      "declared_hts_code": null,
+      "gri_path": [
+        {
+          "competing_candidates": [
+            "Chapter 84 (Heading 8471 ADP Machines)"
+          ],
+          "confidence": 0.98,
+          "description": "Electrical machinery and equipment and parts thereof",
+          "heading_or_subheading": "Chapter 85",
+          "legal_rationale": "Electronic integrated circuit assembly functioning as a cryptographic and tensor computation accelerator.",
+          "passed": true,
+          "step_rule": "GRI 1"
+        },
+        {
+          "competing_candidates": [
+            "8473.30 (Parts and accessories of the machines of heading 8471)"
+          ],
+          "confidence": 0.97,
+          "description": "Electronic integrated circuits and microassemblies",
+          "heading_or_subheading": "Heading 8542",
+          "legal_rationale": "Chapter 84 Note 5(E) directs that electronic acceleration coprocessor cards are classified in their own heading. Heading 8542 specifically covers processors and controllers.",
+          "passed": true,
+          "step_rule": "GRI 1 / Note 5(E)"
+        },
+        {
+          "competing_candidates": [
+            "8542.32 (Memories)",
+            "8542.39 (Other)"
+          ],
+          "confidence": 0.96,
+          "description": "Processors and controllers, whether or not combined with memories, converters, logic circuits, amplifiers, clock and timing circuits, or other circuits",
+          "heading_or_subheading": "Subheading 8542.31",
+          "legal_rationale": "The neural processing core executes programmable arithmetic and matrix tensor multiplication.",
+          "passed": true,
+          "step_rule": "GRI 6"
+        },
+        {
+          "competing_candidates": [],
+          "confidence": 0.95,
+          "description": "Electronic integrated circuits: Processors: Microprocessors, having a 64-bit or greater architecture",
+          "heading_or_subheading": "8542.31.0001",
+          "legal_rationale": "64-bit wide register addressing qualifies under statistical reporting number 0001.",
+          "passed": true,
+          "step_rule": "Statutory Suffix"
+        }
+      ],
+      "input_description": "High precision commercial specification for US Customs entry filing.",
+      "item_id": "hts-server_accelerator",
+      "landed_cost": {
+        "customs_duty": "0.00",
+        "duty_rate_ad_valorem": "0.00",
+        "entered_value": "25000.00",
+        "fiscal_year": "FY2027",
+        "freight_and_insurance": "1500.00",
+        "hmf_fee": "31.25",
+        "hmf_rate": "0.00125",
+        "mpf_fee": "86.60",
+        "mpf_max_cap": "670.86",
+        "mpf_min_cap": "34.58",
+        "mpf_rate": "0.003464",
+        "section_301_duty": "12500.00",
+        "section_301_rate": "0.50",
+        "section_301_subheading": "USTR four-year review modification, FR Doc. 2024-21217 (18 Sep 2024)",
+        "total_customs_cost": "12617.85",
+        "total_landed_cost": "39117.85"
+      },
+      "product_title": "Enterprise AI Tensor Accelerator PCIe Card with Integrated Vapor Chamber",
+      "requires_human_review": false
+    },
+    "smart_apparel_watch": {
+      "chapter_notes_cited": [
+        "Chapter 90 Note 1(h) (Exclusion of smart wearables with primary data communication)",
+        "Chapter 91 Note 1(n) (Exclusion of chronometers that are wireless transceivers)",
+        "CBP Ruling HQ H258957 (Classification of wearable fitness devices)"
+      ],
+      "classified_hts_code": "8517.62.0050",
+      "confidence": 0.81,
+      "country_of_origin": "CN",
+      "declared_hts_code": null,
+      "gri_path": [
+        {
+          "competing_candidates": [
+            "9031.80 (Measuring or checking instruments)",
+            "9102.12 (Wristwatches with opto-electronic display)"
+          ],
+          "confidence": 0.82,
+          "description": "Telephone sets... other apparatus for the transmission or reception of voice, images or other data",
+          "heading_or_subheading": "Heading 8517",
+          "legal_rationale": "Composite machine with optical heart rate monitor (Ch 90), time display (Ch 91), and BLE transmission (Ch 85). Essential character determined to be two-way wireless data connectivity.",
+          "passed": true,
+          "step_rule": "GRI 1 / GRI 3(b)"
+        },
+        {
+          "competing_candidates": [
+            "8517.69 (Other)"
+          ],
+          "confidence": 0.8,
+          "description": "Machines for the reception, conversion and transmission or regeneration of voice, images or other data",
+          "heading_or_subheading": "Subheading 8517.62",
+          "legal_rationale": "Device converts photoplethysmography sensor pulses into encrypted digital BLE packets.",
+          "passed": true,
+          "step_rule": "GRI 6"
+        },
+        {
+          "competing_candidates": [],
+          "confidence": 0.81,
+          "description": "Machines for the reception, conversion and transmission of data: Other",
+          "heading_or_subheading": "8517.62.0050",
+          "legal_rationale": "Qualified as other data communications hardware under 8517.62.0050.",
+          "passed": true,
+          "step_rule": "Statutory Suffix"
+        }
+      ],
+      "input_description": "High precision commercial specification for US Customs entry filing.",
+      "item_id": "hts-smart_apparel_watch",
+      "landed_cost": {
+        "customs_duty": "0.00",
+        "duty_rate_ad_valorem": "0.00",
+        "entered_value": "25000.00",
+        "fiscal_year": "FY2027",
+        "freight_and_insurance": "1500.00",
+        "hmf_fee": "31.25",
+        "hmf_rate": "0.00125",
+        "mpf_fee": "86.60",
+        "mpf_max_cap": "670.86",
+        "mpf_min_cap": "34.58",
+        "mpf_rate": "0.003464",
+        "section_301_duty": "0.00",
+        "section_301_rate": "0.00",
+        "section_301_subheading": null,
+        "total_customs_cost": "117.85",
+        "total_landed_cost": "26617.85"
+      },
+      "product_title": "Multi-Sensor Fitness Tracking Smartband with Heart Rate Sensor & Bluetooth Low Energy",
+      "requires_human_review": true
+    }
+  },
+  "prior_disclosure": {
+    "actual_duty_loss": "1622.70",
+    "addressed_to": "Port Director & FP&F Officer, Port of Los Angeles / Long Beach (2704)",
+    "affected_entries": [
+      "CBP-7501-84920184"
+    ],
+    "filing_reference_id": "PD-84920184-20261120",
+    "interest_tender_amount": "87.21",
+    "letter_text": "*** DRAFT -- GENERATED BY TradeTech Systems Studio Compliance Automation Engine FOR REVIEW BY LICENSED CUSTOMS BROKER OR LEGAL COUNSEL ***\n\nFORMAL PRIOR DISCLOSURE UNDER 19 CFR \u00a7 162.74\nAND 19 U.S.C. \u00a7 1592(c)(4)\n\nDATE: November 20, 2026\nREFERENCE: PD-84920184-20261120\n\nTO:\nPort Director, U.S. Customs and Border Protection\nFines, Penalties, and Forfeitures Officer\nPort of Los Angeles / Long Beach (2704)\n\nFROM:\nImporter of Record: Pacific Tech Imports LLC (EIN 94-8291048)\n[Subject to Review by Licensed Customs Broker or Legal Counsel]\n\nSUBJECT: Prior Disclosure of Inadvertent Valuation Understatement Pertaining to Assists\n         Under 19 U.S.C. \u00a7 1401a and 19 CFR \u00a7 152.103 on Entry #CBP-7501-84920184\n\n1. STATUTORY NOTICE OF VOLUNTARY DISCLOSURE\nPursuant to Section 592(c)(4) of the Tariff Act of 1930, as amended (19 U.S.C. \u00a7 1592(c)(4)),\nand Section 162.74 of the Customs Regulations (19 CFR \u00a7 162.74), the Importer of Record\nhereby formally discloses circumstances of a violation of 19 U.S.C. \u00a7 1592 prior to, or without\nknowledge of, the formal commencement of an investigation by U.S. Customs and Border Protection.\n\n2. AFFECTED MERCHANDISE AND ENTRY IDENTIFICATION\n- Entry Number: CBP-7501-84920184\n- Declared Transaction Value: $450,000.00 USD\n- Port of Entry: Los Angeles / Long Beach (2704)\n- Applicable HTS General Duty Rate: 5.40%\n\n3. NARRATIVE EXPLANATION OF CIRCUMSTANCES\nDuring an internal compliance review, the Importer identified that certain assists provided to the foreign manufacturer\n(specifically tools, dies, molds, and foreign engineering design qualifying under 19 U.S.C. \u00a7 1401a(h)(1)(A))\nwere omitted from the dutiable value declared upon entry.\n[IMPORTER / COUNSEL TO VERIFY CIRCUMSTANCES OF OMISSION].\n\nFurthermore, commercial invoice review indicates that CIF ocean freight of $24,500.00\nand marine insurance of $3,200.00 were included in the entered\nvalue contrary to 19 CFR \u00a7 152.103.\n\n4. STATUTORY RECONCILIATION & MATHEMATICAL DETERMINATION (100% PYTHON DECIMAL)\n- Declared Transaction Value:               $450,000.00\n- Less: Excludable Ocean Freight/Insurance: -$27,700.00\n- Plus: Unapportioned Statutory Assists:    +$57,750.00\n-------------------------------------------------------------------------\n- Adjusted Lawful Dutiable Value:           $480,050.00\n- Lawful Customs Duty Due:                  $25,922.70\n- Customs Duty Previously Tendered:         $24,300.00\n-------------------------------------------------------------------------\n- ACTUAL DUTY LOSS / UNDERPAYMENT:          $1,622.70\n- STATUTORY INTEREST DUE (19 U.S.C. \u00a7 1505): $87.21\n=========================================================================\n- TOTAL TENDER CHECK ENCLOSED (STATUTORY TENDER COMPUTED): $1,709.91\n\n5. PENALTY MITIGATION EFFECTUATION\nUnder 19 U.S.C. \u00a7 1592(c)(4) and 19 CFR \u00a7 162.74, upon tender of the actual duty loss\nplus statutory interest and satisfaction of all filing criteria, civil penalties under\n19 U.S.C. \u00a7 1592(c)(4)(B) for negligence or gross negligence are limited to interest\non the loss of duty. Against the negligence maximum of $3,245.40\nthat is a reduction of $3,158.19 (gross negligence maximum:\n$6,490.80). Culpability is a determination for counsel.\n\nRespectfully submitted,\nPacific Tech Imports LLC (EIN 94-8291048)\n[Signature by Authorized Officer of Importer of Record or Attorney-in-Fact]\n\n*** DRAFT -- PREPARED FOR REVIEW BY LICENSED CUSTOMS BROKER OR LEGAL COUNSEL ***\n",
+    "narrative_explanation": "Voluntary prior disclosure of omitted tooling and engineering assists on entry summary.",
+    "port_of_entry": "Los Angeles / Long Beach (2704)",
+    "statutory_statutes_cited": [
+      "19 U.S.C. \u00a7 1401a (Value of Merchandise)",
+      "19 CFR \u00a7 152.103 (Transaction Value)",
+      "19 U.S.C. \u00a7 1592(c)(4) (Prior Disclosure Mitigation)",
+      "19 CFR \u00a7 162.74 (Prior Disclosure Procedures)",
+      "19 U.S.C. \u00a7 1505 (Statutory Interest)"
+    ],
+    "total_tender_check": "1709.91"
+  },
+  "sanctions_graphs": {
+    "arctic-minerals-sub": {
+      "edges": [
+        {
+          "ownership_pct": 90.0,
+          "relationship_type": "PARENT_HOLDING",
+          "source_id": "nordic-titan-holdings",
+          "target_id": "arctic-minerals-sub"
+        },
+        {
+          "ownership_pct": 60.0,
+          "relationship_type": "CONTROLLING_INTEREST",
+          "source_id": "node-petrov",
+          "target_id": "nordic-titan-holdings"
+        }
+      ],
+      "evaluation": {
+        "blocking_entities": [
+          {
+            "country": "NO",
+            "owner_id": "nordic-titan-holdings",
+            "owner_name": "Nordic Titan Holdings AS",
+            "ownership_pct": 90.0,
+            "programs": [
+              "OFAC 50% Rule Subsidiary (Indirect)"
+            ]
+          }
+        ],
+        "compliance_action": "BLOCK_AND_REPORT",
+        "direct_sdn_status": false,
+        "is_blocked_by_50_percent_rule": true,
+        "statutory_citation": "31 CFR \u00a7 501 (OFAC 50 Percent Rule)",
+        "target_entity_id": "arctic-minerals-sub",
+        "target_entity_name": "Arctic Minerals Processing AS",
+        "total_blocked_ownership_pct": 90.0
+      },
+      "nodes": [
+        {
+          "country": "RU",
+          "id": "node-petrov",
+          "is_blocked": true,
+          "label": "Victor Petrov",
+          "notes": "Designated oligarch subject to blocking sanctions under E.O. 14024.",
+          "programs": [
+            "OFAC SDN (E.O. 14024)",
+            "EU Regulation 269/2014"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "OFAC"
+        },
+        {
+          "country": "NO",
+          "id": "nordic-titan-holdings",
+          "is_blocked": false,
+          "label": "Nordic Titan Holdings AS",
+          "notes": "Norwegian intermediate holding company owned 60% by Petrov.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        },
+        {
+          "country": "NO",
+          "id": "arctic-minerals-sub",
+          "is_blocked": false,
+          "label": "Arctic Minerals Processing AS",
+          "notes": "Subsidiary owned 90% by Nordic Titan, itself blocked (60% SDN-owned), so 90% of this entity is blocked-owned under the OFAC 50 Percent Rule.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        }
+      ],
+      "target_id": "arctic-minerals-sub"
+    },
+    "baltic-semiconductor-485": {
+      "edges": [
+        {
+          "ownership_pct": 48.5,
+          "relationship_type": "BENEFICIAL_OWNER",
+          "source_id": "node-ivan-volkov",
+          "target_id": "baltic-semiconductor-485"
+        },
+        {
+          "ownership_pct": 51.5,
+          "relationship_type": "COMMERCIAL_SHAREHOLDER",
+          "source_id": "node-tallinn-venture",
+          "target_id": "baltic-semiconductor-485"
+        }
+      ],
+      "evaluation": {
+        "blocking_entities": [
+          {
+            "country": "RU",
+            "owner_id": "node-ivan-volkov",
+            "owner_name": "Ivan Volkov",
+            "ownership_pct": 48.5,
+            "programs": [
+              "OFAC SDN (E.O. 14024)"
+            ]
+          }
+        ],
+        "compliance_action": "ENHANCED_DUE_DILIGENCE",
+        "direct_sdn_status": false,
+        "is_blocked_by_50_percent_rule": false,
+        "statutory_citation": "31 CFR \u00a7 501 (OFAC 50 Percent Rule)",
+        "target_entity_id": "baltic-semiconductor-485",
+        "target_entity_name": "Baltic Semiconductor Fabrications OU",
+        "total_blocked_ownership_pct": 48.5
+      },
+      "nodes": [
+        {
+          "country": "EE",
+          "id": "baltic-semiconductor-485",
+          "is_blocked": false,
+          "label": "Baltic Semiconductor Fabrications OU",
+          "notes": "Near-threshold 48.5% unblocked target under the OFAC 50% Rule.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        },
+        {
+          "country": "RU",
+          "id": "node-ivan-volkov",
+          "is_blocked": true,
+          "label": "Ivan Volkov",
+          "notes": "Designated individual under E.O. 14024 holding 48.5% equity in Baltic Semi OU.",
+          "programs": [
+            "OFAC SDN (E.O. 14024)"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "OFAC"
+        },
+        {
+          "country": "EE",
+          "id": "node-tallinn-venture",
+          "is_blocked": false,
+          "label": "Tallinn Venture Capital OU",
+          "notes": "Estonian unblocked technology venture investor holding 51.5% equity.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        }
+      ],
+      "target_id": "baltic-semiconductor-485"
+    },
+    "bis-el-cn-0941": {
+      "edges": [
+        {
+          "ownership_pct": 25.0,
+          "relationship_type": "BENEFICIAL_OWNER",
+          "source_id": "node-petrov",
+          "target_id": "bis-el-cn-0941"
+        },
+        {
+          "ownership_pct": 30.0,
+          "relationship_type": "EQUITY_HOLDING",
+          "source_id": "node-rosoboron",
+          "target_id": "bis-el-cn-0941"
+        },
+        {
+          "ownership_pct": 45.0,
+          "relationship_type": "COMMERCIAL_SHAREHOLDER",
+          "source_id": "node-shenzhen-adv",
+          "target_id": "bis-el-cn-0941"
+        }
+      ],
+      "evaluation": {
+        "blocking_entities": [
+          {
+            "country": "RU",
+            "owner_id": "node-petrov",
+            "owner_name": "Victor Petrov",
+            "ownership_pct": 25.0,
+            "programs": [
+              "OFAC SDN (E.O. 14024)",
+              "EU Regulation 269/2014"
+            ]
+          },
+          {
+            "country": "RU",
+            "owner_id": "node-rosoboron",
+            "owner_name": "Rosoboronexport Joint Stock Company",
+            "ownership_pct": 30.0,
+            "programs": [
+              "OFAC SDN",
+              "EU Consolidated Financial Sanctions",
+              "CAATSA Section 231"
+            ]
+          }
+        ],
+        "compliance_action": "BLOCK_AND_REPORT",
+        "direct_sdn_status": false,
+        "is_blocked_by_50_percent_rule": true,
+        "statutory_citation": "31 CFR \u00a7 501 (OFAC 50 Percent Rule)",
+        "target_entity_id": "bis-el-cn-0941",
+        "target_entity_name": "Global Micro Electronics Ltd",
+        "total_blocked_ownership_pct": 55.0
+      },
+      "nodes": [
+        {
+          "country": "CN",
+          "id": "bis-el-cn-0941",
+          "is_blocked": false,
+          "label": "Global Micro Electronics Ltd",
+          "notes": "Restricted military end-user and prohibited semiconductor export entity under BIS.",
+          "programs": [
+            "BIS Entity List (15 CFR Part 744, Supp. No. 4)",
+            "EAR Military End-User"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "BIS"
+        },
+        {
+          "country": "RU",
+          "id": "node-petrov",
+          "is_blocked": true,
+          "label": "Victor Petrov",
+          "notes": "Designated oligarch subject to blocking sanctions under E.O. 14024.",
+          "programs": [
+            "OFAC SDN (E.O. 14024)",
+            "EU Regulation 269/2014"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "OFAC"
+        },
+        {
+          "country": "RU",
+          "id": "node-rosoboron",
+          "is_blocked": true,
+          "label": "Rosoboronexport Joint Stock Company",
+          "notes": "State-owned defense intermediary subject to primary and secondary blocking sanctions.",
+          "programs": [
+            "OFAC SDN",
+            "EU Consolidated Financial Sanctions",
+            "CAATSA Section 231"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "OFAC"
+        },
+        {
+          "country": "CN",
+          "id": "node-shenzhen-adv",
+          "is_blocked": false,
+          "label": "Shenzhen Advanced Components Ltd",
+          "notes": "Commercial electronics component supplier, unblocked.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        }
+      ],
+      "target_id": "bis-el-cn-0941"
+    },
+    "ofac-sdn-ir-0382": {
+      "edges": [
+        {
+          "ownership_pct": 65.0,
+          "relationship_type": "CONTROLLING_INTEREST",
+          "source_id": "node-irisl",
+          "target_id": "ofac-sdn-ir-0382"
+        },
+        {
+          "ownership_pct": 35.0,
+          "relationship_type": "NOMINEE_DIRECTOR",
+          "source_id": "node-panama-trust",
+          "target_id": "ofac-sdn-ir-0382"
+        }
+      ],
+      "evaluation": {
+        "blocking_entities": [
+          {
+            "country": "IR",
+            "owner_id": "node-irisl",
+            "owner_name": "Islamic Republic of Iran Shipping Lines",
+            "ownership_pct": 65.0,
+            "programs": [
+              "OFAC SDN",
+              "UNSCR 1929"
+            ]
+          }
+        ],
+        "compliance_action": "BLOCK_AND_REPORT",
+        "direct_sdn_status": true,
+        "is_blocked_by_50_percent_rule": true,
+        "statutory_citation": "31 CFR \u00a7 501 (OFAC 50 Percent Rule)",
+        "target_entity_id": "ofac-sdn-ir-0382",
+        "target_entity_name": "Apex Ocean Logistics Inc",
+        "total_blocked_ownership_pct": 65.0
+      },
+      "nodes": [
+        {
+          "country": "PA",
+          "id": "ofac-sdn-ir-0382",
+          "is_blocked": true,
+          "label": "Apex Ocean Logistics Inc",
+          "notes": "Sanctioned front carrier engaged in deceptive maritime transport practices.",
+          "programs": [
+            "OFAC SDN (Specially Designated Nationals)",
+            "E.O. 13846 / E.O. 13224 Maritime Watchlist"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "OFAC"
+        },
+        {
+          "country": "IR",
+          "id": "node-irisl",
+          "is_blocked": true,
+          "label": "Islamic Republic of Iran Shipping Lines",
+          "notes": "National maritime carrier of Iran, designated under counter-proliferation and terrorism authorities.",
+          "programs": [
+            "OFAC SDN",
+            "UNSCR 1929"
+          ],
+          "risk_level": "SDN_BLOCKED",
+          "sanction_authority": "OFAC"
+        },
+        {
+          "country": "PA",
+          "id": "node-panama-trust",
+          "is_blocked": false,
+          "label": "Panama Maritime Holding Trust",
+          "notes": "Offshore nominee vehicle for vessel and logistics holdings.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        }
+      ],
+      "target_id": "ofac-sdn-ir-0382"
+    },
+    "pacific-apex-01": {
+      "edges": [
+        {
+          "ownership_pct": 70.0,
+          "relationship_type": "PARENT_HOLDING",
+          "source_id": "node-us-holdings",
+          "target_id": "pacific-apex-01"
+        },
+        {
+          "ownership_pct": 30.0,
+          "relationship_type": "BENEFICIAL_OWNER",
+          "source_id": "node-us-trust",
+          "target_id": "pacific-apex-01"
+        }
+      ],
+      "evaluation": {
+        "blocking_entities": [],
+        "compliance_action": "CLEAR_TRANSACTION",
+        "direct_sdn_status": false,
+        "is_blocked_by_50_percent_rule": false,
+        "statutory_citation": "31 CFR \u00a7 501 (OFAC 50 Percent Rule)",
+        "target_entity_id": "pacific-apex-01",
+        "target_entity_name": "Pacific Apex Computing Systems Inc",
+        "total_blocked_ownership_pct": 0.0
+      },
+      "nodes": [
+        {
+          "country": "US",
+          "id": "pacific-apex-01",
+          "is_blocked": false,
+          "label": "Pacific Apex Computing Systems Inc",
+          "notes": "Clean verified domestic enterprise consignee.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        },
+        {
+          "country": "US",
+          "id": "node-us-holdings",
+          "is_blocked": false,
+          "label": "Pacific Apex Holdings Corp",
+          "notes": "Domestic corporate holding parent company.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        },
+        {
+          "country": "US",
+          "id": "node-us-trust",
+          "is_blocked": false,
+          "label": "California Enterprise Trust",
+          "notes": "Domestic family office beneficial trust.",
+          "programs": [],
+          "risk_level": "CLEAN_COMMERCIAL",
+          "sanction_authority": null
+        }
+      ],
+      "target_id": "pacific-apex-01"
+    }
+  },
+  "valuation_audit": {
+    "adjusted_lawful_dutiable_value": "480050.00",
+    "assists_audited": [
+      {
+        "amortization_method": "units_produced",
+        "anticipated_total_units": 100000,
+        "category": "tooling_dies_molds",
+        "country_of_origin": "CN",
+        "description": "Multi-Cavity Liquid Silicone Injection Tooling & Molds",
+        "id": "AST-2026-001",
+        "is_declared_to_cbp": false,
+        "per_unit_amortized_cost": "1.85",
+        "remaining_unamortized_cost": "157250.00",
+        "supplier_name": "Dongguan Precision Tooling Co., Ltd.",
+        "total_acquisition_cost": "185000.00",
+        "units_shipped_to_date": 15000
+      },
+      {
+        "amortization_method": "units_produced",
+        "anticipated_total_units": 60000,
+        "category": "foreign_engineering_design",
+        "country_of_origin": "JP",
+        "description": "Custom ASIC Firmware & Overseas PCB Micro-Architecture Layout",
+        "id": "AST-2026-002",
+        "is_declared_to_cbp": false,
+        "per_unit_amortized_cost": "2.00",
+        "remaining_unamortized_cost": "100000.00",
+        "supplier_name": "Kyoto Micro-Embedded Labs",
+        "total_acquisition_cost": "120000.00",
+        "units_shipped_to_date": 10000
+      },
+      {
+        "amortization_method": "first_entry",
+        "anticipated_total_units": 50000,
+        "category": "tooling_dies_molds",
+        "country_of_origin": "DE",
+        "description": "Specialized CNC Milling Fixtures & Progressive Stamping Dies",
+        "id": "AST-2026-003",
+        "is_declared_to_cbp": true,
+        "per_unit_amortized_cost": "1.90",
+        "remaining_unamortized_cost": "0.00",
+        "supplier_name": "Bavaria Precision Machining GmbH",
+        "total_acquisition_cost": "95000.00",
+        "units_shipped_to_date": 50000
+      }
+    ],
+    "assists_omitted_cost": "57750.00",
+    "declared_duty_paid": "24300.00",
+    "declared_transaction_value": "450000.00",
+    "duty_rate_ad_valorem": "0.054",
+    "duty_underpayment": "1622.70",
+    "entry_number": "CBP-7501-84920184",
+    "gross_negligence_penalty_exposure": "6490.80",
+    "importer_of_record": "Pacific Tech Imports LLC (EIN 94-8291048)",
+    "improper_cif_overvaluation": "27700.00",
+    "international_freight_in_invoice": "24500.00",
+    "invoice_incoterm": "CIF Los Angeles",
+    "lawful_duty_due": "25922.70",
+    "marine_insurance_in_invoice": "3200.00",
+    "negligence_penalty_exposure": "3245.40",
+    "prior_disclosure_tender_amount": "1709.91",
+    "statutory_interest_19usc1505": "87.21",
+    "total_liability_avoided": "3158.19"
+  }
+}

@@ -60,10 +60,54 @@ export interface AuditResult {
   extracted_data: Record<string, any>;
   offline_fallback_active?: boolean;
   audit_run_id?: string;
+  /** SHA-256(calc_version | policy | ruleset_hash | document_sha256), per ADR-001 */
+  run_digest?: string | null;
+  /** SHA-256 of the audited document bytes, computed by the backend */
+  document_sha256?: string | null;
+  ruleset_hash?: string | null;
   calc_version?: string;
   executed_at?: string;
-  quarantine_status?: "QUARANTINED" | "RELEASED" | "ESCALATED";
+  as_of_date?: string | null;
+  source?: "fixture" | "upload" | "custom_payload" | "client";
+  missing_fields?: string[];
+  quarantine_reasons?: string[];
+  quarantine_status?: "QUARANTINED" | "RELEASED" | "ESCALATED" | null;
   engagement_policy?: EngagementPolicy | Record<string, any>;
+}
+
+/** Where a piece of data came from, so the UI never presents a fallback as live. */
+export type DataSource = "live" | "snapshot" | "client";
+
+export interface Sourced<T> {
+  data: T;
+  source: DataSource;
+  error?: string;
+}
+
+export interface CargoWiseDiff {
+  concept_id: string;
+  audit_run_id: string;
+  status: "READY_FOR_INGESTION" | "HELD_PENDING_REVIEW" | "BLOCKED_DO_NOT_TRANSMIT" | "NOT_APPLICABLE";
+  schema_version: string;
+  schema_validation: string;
+  raw_unaudited_xml: string;
+  reconciled_lawful_xml: string;
+  diff_summary: Array<{ node: string; raw: string; reconciled: string; statute: string; status: string }>;
+}
+
+export type LedgerAction = "APPROVE" | "REQUEST_DOCS" | "ESCALATE" | "OVERRIDE_HTS" | "REOPEN";
+
+export interface LedgerEntry {
+  seq: number;
+  run_id: string;
+  finding_id: string;
+  action: LedgerAction;
+  reason: string;
+  actor: string;
+  override_value?: string | null;
+  ts: string;
+  prev_hash: string;
+  hash: string;
 }
 
 export interface LeadCapturePayload {
@@ -87,7 +131,7 @@ export interface GraphNode {
   label: string;
   country: string;
   is_blocked: boolean;
-  risk_level: "SDN_BLOCKED" | "HIGH_RISK_SHELL" | "CLEAN_COMMERCIAL" | "PEP";
+  risk_level: "SDN_BLOCKED" | "HIGH_RISK_SHELL" | "CLEAN_COMMERCIAL" | "PEP" | "EAR_EXPORT_RESTRICTION" | "COMPLIANCE_HOLD" | string;
   programs: string[];
   sanction_authority?: string;
   notes?: string;
@@ -114,7 +158,12 @@ export interface OFAC50PercentEvaluation {
     ownership_pct: number;
     programs: string[];
   }>;
-  compliance_action: "BLOCK_AND_REPORT" | "ENHANCED_DUE_DILIGENCE" | "CLEAR_TRANSACTION";
+  compliance_action:
+    | "BLOCK_AND_REPORT"
+    | "ENHANCED_DUE_DILIGENCE"
+    | "CLEAR_TRANSACTION"
+    | "LICENSE_REQUIRED_EAR"
+    | "REQUIRES_MANUAL_REVIEW";
 }
 
 export interface CorporateGraphResponse {

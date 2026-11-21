@@ -39,7 +39,7 @@ MPF_CAPS = {
 MPF_MIN, MPF_MAX = get_mpf_caps(DEFAULT_MPF_FISCAL_YEAR)
 CONFIDENCE_THRESHOLD = 0.85
 
-# Non-apparatus exclusions under WCO GRI 1 to prevent polysemous keyword collisions (C3)
+# Non-apparatus exclusions under WCO GRI 1 to prevent polysemous keyword collisions
 NON_APPARATUS_EXCLUSIONS = [
     r"\b(?:t-?shirts?|hoodies?|clothing|apparel|hats?|caps?|socks?|jackets?)\b",
     r"\b(?:shaving\s+cream|cosmetics?|lotions?|soaps?|shampoos?)\b",
@@ -73,8 +73,8 @@ def calculate_landed_cost(
     sec_subheading: Optional[str] = None
     if section_301_rate is not None:
         sec_rate = section_301_rate
-        if sec_rate > Decimal("0.00"):
-            sec_subheading = "9903.88.01"
+        if sec_rate > Decimal("0.00") and hts_code and country_of_origin:
+            _, sec_subheading = get_section_301_rate(hts_code, country_of_origin)
     elif hts_code and country_of_origin:
         sec_rate, sec_subheading = get_section_301_rate(hts_code, country_of_origin)
     else:
@@ -301,7 +301,7 @@ class HTSClassifierEngine:
 
     def classify(self, request: ClassificationRequest) -> HTSClassificationResult:
         """Classify a product description through the hierarchical WCO GRI decision tree."""
-        # Detect matching preset or keyword using word boundaries (C3)
+        # Detect matching preset or keyword using word boundaries
         text_lower = f"{request.product_title} {request.product_description} {request.commercial_attributes or ''}".lower()
 
         patterns = {

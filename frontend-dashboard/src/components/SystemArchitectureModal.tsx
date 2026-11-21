@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle2, Terminal, Cpu, FileText, ExternalLink, ShieldCheck, Download, Code, Play, Copy, Check, RotateCcw, Send } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, CheckCircle2, Terminal, Cpu, ExternalLink, Code, Play, Copy, Check, RotateCcw } from "lucide-react";
 import { sound } from "@/lib/audio";
-import { VERIFIED_PYTEST_COUNT } from "@/lib/metrics";
+import { BENCHMARK, VERIFIED_PYTEST_COUNT, fmtRate } from "@/lib/metrics";
 
 interface SystemArchitectureModalProps {
   isOpen: boolean;
@@ -222,8 +222,8 @@ const PLAYGROUND_ENDPOINTS: EndpointDef[] = [
     method: "GET",
     path: "/api/v1/audit/concept_2_freight",
     category: "Pillar 02 • Freight Audit",
-    statute: "FMC Docket 21-08 • OSRA 2022 • 46 CFR § 541",
-    description: "Inspects ocean and drayage carrier freight bills before AP wire release, catching 5% to 15% billing leakage under FMC Docket 21-08 and OSRA 2022.",
+    statute: "Service contract • 46 CFR 545.5 • 46 CFR Part 541",
+    description: "Inspects ocean and drayage carrier freight bills before AP wire release, checking fuel surcharges and accessorials against the contract and detention against free time and the 46 CFR Part 541 billing rules.",
     mockResponse: {
       concept_id: "concept_2_freight",
       title: "Pre-Payment Freight Audit",
@@ -250,7 +250,7 @@ const PLAYGROUND_ENDPOINTS: EndpointDef[] = [
         {
           id: "disc-c2-03",
           title: "Unwarranted Port Detention Inside Free Time",
-          statutory_code: "OSRA 2022 / FMC Docket 21-08",
+          statutory_code: "46 CFR 545.5 / 46 CFR Part 541",
           exposure_amount: "880.00"
         }
       ]
@@ -466,10 +466,10 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
-        className="relative w-full max-w-4xl bg-[#0B0F19] text-[#F8FAFC] border border-[#1F2937] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-4xl bg-canvas-dark text-canvas-stone border border-terminal-subtle rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Modal Header */}
-        <div className="p-5 border-b border-[#1F2937] bg-[#0F172A] flex items-center justify-between">
+        <div className="p-5 border-b border-terminal-subtle bg-terminal-slate flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-cobalt-500/20 border border-cobalt-500/40 flex items-center justify-center text-cobalt-400">
               <Cpu className="w-4 h-4" />
@@ -484,7 +484,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   <span>{VERIFIED_PYTEST_COUNT}/{VERIFIED_PYTEST_COUNT} Tests Passing</span>
                 </span>
               </div>
-              <p className="text-xs text-[#94A3B8] font-mono mt-0.5">
+              <p className="text-xs text-slate-400 font-mono mt-0.5">
                 Principal AI Systems Architecture Proof-of-Work • Built by Samuel
               </p>
             </div>
@@ -499,7 +499,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
         </div>
 
         {/* Tab Selector */}
-        <div role="tablist" aria-label="Architecture tabs" className="flex items-center gap-1 px-5 pt-3 bg-[#0F172A] border-b border-[#1F2937] text-xs font-mono">
+        <div role="tablist" aria-label="Architecture tabs" className="flex items-center gap-1 px-5 pt-3 bg-terminal-slate border-b border-terminal-subtle text-xs font-mono">
           <button
             role="tab"
             aria-selected={activeTab === "architecture"}
@@ -510,7 +510,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
             className={`px-3 py-2 border-b-2 font-semibold transition-all ${
               activeTab === "architecture"
                 ? "border-cobalt-400 text-cobalt-400 bg-cobalt-950/20"
-                : "border-transparent text-[#94A3B8] hover:text-ink-primary"
+                : "border-transparent text-slate-400 hover:text-ink-primary"
             }`}
           >
             01. System Architecture
@@ -526,7 +526,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
             className={`px-3 py-2 border-b-2 font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "tests"
                 ? "border-emerald-400 text-emerald-400 bg-emerald-950/20"
-                : "border-transparent text-[#94A3B8] hover:text-ink-primary"
+                : "border-transparent text-slate-400 hover:text-ink-primary"
             }`}
           >
             <span>02. Pytest Execution ({VERIFIED_PYTEST_COUNT}/{VERIFIED_PYTEST_COUNT})</span>
@@ -542,7 +542,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
             className={`px-3 py-2 border-b-2 font-semibold transition-all ${
               activeTab === "math_proof"
                 ? "border-amber-400 text-amber-400 bg-amber-950/20"
-                : "border-transparent text-[#94A3B8] hover:text-ink-primary"
+                : "border-transparent text-slate-400 hover:text-ink-primary"
             }`}
           >
             03. Deterministic Math Proof
@@ -558,7 +558,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
             className={`px-3 py-2 border-b-2 font-semibold transition-all ${
               activeTab === "candidate"
                 ? "border-purple-400 text-purple-400 bg-purple-950/20"
-                : "border-transparent text-[#94A3B8] hover:text-ink-primary"
+                : "border-transparent text-slate-400 hover:text-ink-primary"
             }`}
           >
             04. Whitepaper &amp; ADRs
@@ -574,7 +574,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
             className={`px-3 py-2 border-b-2 font-semibold transition-all flex items-center gap-1.5 ${
               activeTab === "playground"
                 ? "border-cyan-400 text-cyan-400 bg-cyan-950/20"
-                : "border-transparent text-[#94A3B8] hover:text-ink-primary"
+                : "border-transparent text-slate-400 hover:text-ink-primary"
             }`}
           >
             <Terminal className="w-3.5 h-3.5 text-cyan-400" />
@@ -587,18 +587,18 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           {/* TAB 1: ARCHITECTURE */}
           {activeTab === "architecture" && (
             <div className="space-y-5">
-              <div className="p-4 rounded-lg bg-[#0F172A] border border-[#1F2937] space-y-2">
+              <div className="p-4 rounded-lg bg-terminal-slate border border-terminal-subtle space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary font-mono flex items-center gap-2">
                   <span>🏛️</span>
                   <span>End-to-End Enterprise Dataflow Pipeline</span>
                 </h4>
-                <p className="text-xs text-[#94A3B8] leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   Zero cloud OCR fees, strict mathematical determinism, and sub-200ms private audit latency.
                 </p>
               </div>
 
               {/* Architecture Blueprint Diagram */}
-              <div className="p-4 rounded-lg bg-[#0B0F19] border border-[#1F2937] font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto">
+              <div className="p-4 rounded-lg bg-canvas-dark border border-terminal-subtle font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto">
                 <pre className="text-cyan-400 text-[11px] leading-tight">
 {`┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                        TRADETECH SYSTEMS STUDIO: SYSTEM ARCHITECTURE                  │
@@ -607,7 +607,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ 1. INGESTION & DOCUMENT LAYOUT LAYER                                                   │
-│    • Local pypdf / Docling Layout Parser (Zero per-page external cloud OCR fees)       │
+│    • Local pypdf text-layer parser (no OCR: scanned PDFs are held for review)         │
 │    • Coordinate Normalization into [0, 1000) integer coordinate space                  │
 │    • Deterministic local fallback parser for offline zero-key execution                │
 └────────────────────────────────────────────────────────────────────────────────────────┘
@@ -615,7 +615,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ 2. DETERMINISTIC STATUTORY REASONING CORE (100% Python Decimal)                        │
-│    • Pillar 01: 19 U.S.C. § 1592 Negligence & FMC Docket 21-08 Pre-Payment Audit      │
+│    • Pillar 01: 19 U.S.C. § 1592 exposure & 46 CFR Part 541 pre-payment freight audit  │
 │    • Pillar 02: 31 CFR § 501 OFAC 50% Rule Recursive Multi-Hop Corporate Graph         │
 │    • Pillar 03: WCO GRI 1 to 6 Path-Dependent State Machine with Confidence Gating        │
 │    • Pillar 04: 19 CFR § 152.103 GAAP Assist Register & 19 CFR § 162.74 Prior Package  │
@@ -634,17 +634,17 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
 
               {/* Invariants Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
-                <div className="p-3.5 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3.5 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-cobalt-400 font-bold uppercase text-[11px]">Strict Mathematical Determinism</div>
-                  <div className="text-[#94A3B8] text-[11px] mt-1">
+                  <div className="text-slate-400 text-[11px] mt-1">
                     Zero LLM arithmetic. 100% of duties, surcharges, amortizations, and penalty exposure calculated using Python <code className="text-ink-primary">decimal.Decimal</code> with <code className="text-ink-primary">ROUND_HALF_UP</code>.
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3.5 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-emerald-400 font-bold uppercase text-[11px]">Measured Two-Tier Engine Latency</div>
-                  <div className="text-[#94A3B8] text-[11px] mt-1">
-                    Tier 1 (2-page PDF + audit): <code className="text-ink-primary">58.8 ms p99</code>. Tier 2 (in-memory core): HTS GRI <code className="text-ink-primary">0.146 ms</code>, Sanctions <code className="text-ink-primary">0.115 ms</code>, Assist valuation <code className="text-ink-primary">0.200 ms</code> (max p99 <code className="text-ink-primary">0.303 ms</code>).
+                  <div className="text-slate-400 text-[11px] mt-1">
+                    Tier 1 (2-page PDF + audit): <code className="text-ink-primary">{BENCHMARK.tier1_p99_ms} ms p99</code>. Tier 2 (in-memory rules): max p99 <code className="text-ink-primary">{BENCHMARK.tier2_p99_ms} ms</code>. Measured {BENCHMARK.measured_on} on {BENCHMARK.hardware}.
                   </div>
                 </div>
               </div>
@@ -659,8 +659,8 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary font-mono">
                     Automated Pytest Suite Execution
                   </h4>
-                  <div className="text-[11px] text-[#94A3B8] font-mono mt-0.5">
-                    Ran {VERIFIED_PYTEST_COUNT} tests across 15 suites • Exit Code: 0 • Zero Failures
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                    Ran {VERIFIED_PYTEST_COUNT} tests • Exit Code: 0 • Zero Failures
                   </div>
                 </div>
                 <span className="px-2.5 py-1 text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 rounded font-bold">
@@ -703,11 +703,11 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           {/* TAB 3: MATHEMATICAL PROOF */}
           {activeTab === "math_proof" && (
             <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-[#0F172A] border border-[#1F2937]">
+              <div className="p-4 rounded-lg bg-terminal-slate border border-terminal-subtle">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary font-mono">
                   Why Floating-Point Arithmetic Fails in Regulated Customs
                 </h4>
-                <p className="text-xs text-[#94A3B8] mt-1 leading-relaxed">
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   In IEEE 754 binary floating-point representation, binary fractions cannot represent decimal tenths precisely. Under 19 U.S.C. § 1592, any variance between line-item extensions and declared entry summaries constitutes statutory false statement liability.
                 </p>
               </div>
@@ -722,7 +722,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                       <th className="py-2.5 px-3 text-emerald-400">Samuel&apos;s Deterministic Decimal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F2937] text-[11px]">
+                  <tbody className="divide-y divide-terminal-subtle text-[11px]">
                     <tr>
                       <td className="py-2.5 px-3 font-bold text-ink-primary">Line Multiplication ($0.10 + $0.20)</td>
                       <td className="py-2.5 px-3 text-red-400">$0.30000000000000004 (Drift)</td>
@@ -752,14 +752,14 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           {/* TAB 4: ARCHITECTURE WHITEPAPER & DECISION RECORDS */}
           {activeTab === "candidate" && (
             <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-[#0F172A] border border-[#1F2937]">
+              <div className="p-4 rounded-lg bg-terminal-slate border border-terminal-subtle">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary font-mono">
                   Architecture Whitepaper &amp; Decision Records
                 </h4>
                 <p className="text-xs text-blue-400 font-mono mt-0.5 font-semibold">
                   Samuel Rencken • BCom in Economic Sciences (International Trade) | North-West University (NWU)
                 </p>
-                <p className="text-xs text-[#94A3B8] mt-1 leading-relaxed">
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Peer-reviewed systems architecture, two-tier latency benchmarks, and Architecture Decision Records (ADRs).
                 </p>
               </div>
@@ -767,7 +767,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
                 <a
                   href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/whitepaper`}
-                  className="p-4 rounded bg-[#0F172A] border border-[#1F2937] hover:border-cyan-500 transition-all group block"
+                  className="p-4 rounded bg-terminal-slate border border-terminal-subtle hover:border-cyan-500 transition-all group block"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-ink-primary group-hover:text-cyan-400 flex items-center gap-1.5">
@@ -776,7 +776,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     </span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
                   </div>
-                  <div className="text-[11px] text-[#94A3B8] mt-1">
+                  <div className="text-[11px] text-slate-400 mt-1">
                     Full systems design publication on WCO GRI state machines, OFAC 50% Rule graphs, and Decimal math.
                   </div>
                 </a>
@@ -785,7 +785,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   href="https://github.com/sssammyboyyy/trade-systems-studio/blob/main/docs/PERFORMANCE_AND_SCALE_BENCHMARKS.md"
                   target="_blank"
                   rel="noreferrer"
-                  className="p-4 rounded bg-[#0F172A] border border-[#1F2937] hover:border-cobalt-500 transition-all group block"
+                  className="p-4 rounded bg-terminal-slate border border-terminal-subtle hover:border-cobalt-500 transition-all group block"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-ink-primary group-hover:text-cobalt-400">
@@ -793,8 +793,8 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     </span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-cobalt-400" />
                   </div>
-                  <div className="text-[11px] text-[#94A3B8] mt-1">
-                    Two-tier benchmark telemetry: 6,496 evals/sec core throughput and sub-60ms real 2-page PDF p99 latency.
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    Two-tier benchmark: {fmtRate(BENCHMARK.tier2_evals_per_sec)} rule evaluations/sec in memory, {BENCHMARK.tier1_p99_ms} ms p99 for a 2-page PDF (measured on {BENCHMARK.hardware}).
                   </div>
                 </a>
 
@@ -802,7 +802,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   href="https://github.com/sssammyboyyy/trade-systems-studio/tree/main/docs/adr"
                   target="_blank"
                   rel="noreferrer"
-                  className="p-4 rounded bg-[#0F172A] border border-[#1F2937] hover:border-cobalt-500 transition-all group block"
+                  className="p-4 rounded bg-terminal-slate border border-terminal-subtle hover:border-cobalt-500 transition-all group block"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-ink-primary group-hover:text-cobalt-400">
@@ -810,7 +810,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     </span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-cobalt-400" />
                   </div>
-                  <div className="text-[11px] text-[#94A3B8] mt-1">
+                  <div className="text-[11px] text-slate-400 mt-1">
                     ADR-001 to ADR-004 covering Decimal determinism, CargoWise eAdaptor pre-ingest, OFAC DAG, and headless core.
                   </div>
                 </a>
@@ -819,7 +819,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   href="https://github.com/sssammyboyyy/trade-systems-studio"
                   target="_blank"
                   rel="noreferrer"
-                  className="p-4 rounded bg-[#0F172A] border border-[#1F2937] hover:border-emerald-500 transition-all group block"
+                  className="p-4 rounded bg-terminal-slate border border-terminal-subtle hover:border-emerald-500 transition-all group block"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-ink-primary group-hover:text-emerald-400">
@@ -827,7 +827,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     </span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400" />
                   </div>
-                  <div className="text-[11px] text-[#94A3B8] mt-1">
+                  <div className="text-[11px] text-slate-400 mt-1">
                     FastAPI + Next.js 15 repository with {VERIFIED_PYTEST_COUNT}/{VERIFIED_PYTEST_COUNT} passing pytest tests.
                   </div>
                 </a>
@@ -838,13 +838,13 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           {/* TAB 5: INTERACTIVE API PLAYGROUND */}
           {activeTab === "playground" && (
             <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-[#0F172A] border border-[#1F2937] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-lg bg-terminal-slate border border-terminal-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary font-mono flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-cyan-400" />
                     <span>Deterministic REST API Playground</span>
                   </h4>
-                  <p className="text-xs text-[#94A3B8] mt-1 font-mono">
+                  <p className="text-xs text-slate-400 mt-1 font-mono">
                     Zero-cloud OCR • Python Decimal precision • Sub-millisecond latency
                   </p>
                 </div>
@@ -853,7 +853,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     FastAPI 0.115+
                   </span>
                   <span className="px-2.5 py-1 text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded font-semibold">
-                    Tier 2 p99: 0.303 ms
+                    Tier 2 p99: {BENCHMARK.tier2_p99_ms} ms
                   </span>
                 </div>
               </div>
@@ -869,7 +869,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                       className={`px-3 py-1.5 rounded text-xs font-mono border transition-all flex items-center gap-2 ${
                         isSelected
                           ? "bg-slate-800 border-cyan-400 text-ink-primary shadow-lg shadow-cyan-950/40"
-                          : "bg-[#0F172A] border-[#1F2937] text-slate-400 hover:text-slate-200 hover:border-slate-600"
+                          : "bg-terminal-slate border-terminal-subtle text-slate-400 hover:text-slate-200 hover:border-slate-600"
                       }`}
                     >
                       <span
@@ -888,7 +888,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
               </div>
 
               {/* Active Endpoint Info Card */}
-              <div className="p-3.5 rounded bg-[#0F172A] border border-[#1F2937] space-y-1.5 font-mono text-xs">
+              <div className="p-3.5 rounded bg-terminal-slate border border-terminal-subtle space-y-1.5 font-mono text-xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <span
@@ -914,8 +914,8 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
               {/* Request and Response Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Request Side */}
-                <div className="flex flex-col rounded bg-[#0B0F19] border border-[#1F2937] overflow-hidden">
-                  <div className="p-2.5 bg-[#0F172A] border-b border-[#1F2937] flex items-center justify-between text-xs font-mono">
+                <div className="flex flex-col rounded bg-canvas-dark border border-terminal-subtle overflow-hidden">
+                  <div className="p-2.5 bg-terminal-slate border-b border-terminal-subtle flex items-center justify-between text-xs font-mono">
                     <span className="text-slate-300 font-semibold flex items-center gap-1.5">
                       <Code className="w-3.5 h-3.5 text-cyan-400" />
                       <span>Request Payload (JSON)</span>
@@ -952,7 +952,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   </div>
 
                   {/* Execution Bar */}
-                  <div className="p-3 bg-[#0F172A] border-t border-[#1F2937] flex items-center justify-between gap-2">
+                  <div className="p-3 bg-terminal-slate border-t border-terminal-subtle flex items-center justify-between gap-2">
                     <button
                       onClick={handleExecute}
                       disabled={isExecuting}
@@ -973,7 +973,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
 
                     <button
                       onClick={() => copyToClipboard(getCurlSnippet(), "curl")}
-                      className="px-3 py-2 rounded bg-[#0F172A] hover:bg-slate-800 text-slate-300 font-mono text-xs border border-[#1F2937] hover:border-slate-500 transition-all flex items-center gap-1.5"
+                      className="px-3 py-2 rounded bg-terminal-slate hover:bg-slate-800 text-slate-300 font-mono text-xs border border-terminal-subtle hover:border-slate-500 transition-all flex items-center gap-1.5"
                     >
                       {copiedCurl ? (
                         <>
@@ -991,8 +991,8 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                 </div>
 
                 {/* Response Side */}
-                <div className="flex flex-col rounded bg-[#0B0F19] border border-[#1F2937] overflow-hidden">
-                  <div className="p-2.5 bg-[#0F172A] border-b border-[#1F2937] flex items-center justify-between text-xs font-mono">
+                <div className="flex flex-col rounded bg-canvas-dark border border-terminal-subtle overflow-hidden">
+                  <div className="p-2.5 bg-terminal-slate border-b border-terminal-subtle flex items-center justify-between text-xs font-mono">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-300 font-semibold">Response</span>
                       <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
@@ -1028,7 +1028,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     </pre>
                   </div>
 
-                  <div className="p-2.5 bg-[#0F172A] border-t border-[#1F2937] text-[10px] font-mono text-slate-400 flex items-center justify-between">
+                  <div className="p-2.5 bg-terminal-slate border-t border-terminal-subtle text-[10px] font-mono text-slate-400 flex items-center justify-between">
                     <span>Coordinate Space: [0, 1000) Normalized</span>
                     <span className="text-emerald-400 font-semibold">Zero Cloud OCR Overhead</span>
                   </div>
@@ -1036,7 +1036,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
               </div>
 
               {/* cURL Display Snippet */}
-              <div className="p-3 rounded bg-[#0B0F19] border border-[#1F2937] font-mono text-xs space-y-1">
+              <div className="p-3 rounded bg-canvas-dark border border-terminal-subtle font-mono text-xs space-y-1">
                 <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center justify-between">
                   <span>Terminal Reproduction Command</span>
                   <span className="text-cyan-400">Ready to paste</span>
@@ -1050,8 +1050,8 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-[#1F2937] bg-[#0F172A] flex items-center justify-between text-xs font-mono">
-          <div className="text-[#94A3B8] flex items-center gap-2">
+        <div className="p-4 border-t border-terminal-subtle bg-terminal-slate flex items-center justify-between text-xs font-mono">
+          <div className="text-slate-400 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>TradeTech Systems Studio • {VERIFIED_PYTEST_COUNT}/{VERIFIED_PYTEST_COUNT} Automated Tests Verified</span>
           </div>

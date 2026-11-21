@@ -1,5 +1,5 @@
 """
-Durable Lead Persistence Adapter (H5, M13).
+Durable Lead Persistence Adapter.
 Persists validated lead submissions to Supabase REST when configured,
 or to a local SQLite database so leads survive backend process restarts.
 """

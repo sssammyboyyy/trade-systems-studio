@@ -16,7 +16,8 @@ def test_concept_1_customs_audit():
     assert response.status_code == 200
     data = response.json()
     assert data["concept_id"] == "concept_1_customs"
-    assert data["metrics"]["penalty_exposure_avoided"] == "125000.00"
+    # Negligence (default culpability): 2 x $31,250 loss of duty
+    assert data["metrics"]["penalty_exposure_avoided"] == "62500.00"
     assert len(data["discrepancies"]) >= 3
     # Verify uncertainty bounding box
     cif = next(d for d in data["discrepancies"] if "CIF" in d["title"])
@@ -42,7 +43,7 @@ def test_aggregate_metrics():
     response = client.get("/api/v1/metrics")
     assert response.status_code == 200
     data = response.json()
-    assert data["penalty_exposure_avoided"] == "125000.00"
+    assert data["penalty_exposure_avoided"] == "62500.00"
     assert data["carrier_overbilling_caught"] == "1547.50"
     assert data["drawback_unclaimed_unlocked"] == "27324.00"
 
@@ -103,12 +104,13 @@ def test_concept_4_sanctions_audit_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["concept_id"] == "concept_4_sanctions"
-    assert data["metrics"]["penalty_exposure_avoided"] == "350000.00"
+    # IEEPA maximum for 2026: greater of $377,700 or 2x the transaction value (not stated)
+    assert data["metrics"]["penalty_exposure_avoided"] == "377700.00"
     assert len(data["discrepancies"]) == 1
     assert "55%" in data["discrepancies"][0]["title"]
 
 def test_cors_preflight_trusted_origin():
-    """Verify trusted origin receives CORS allow headers and credentials disabled by default (H4, H5)."""
+    """Verify trusted origin receives CORS allow headers and credentials disabled by default."""
     headers = {
         "Origin": "http://localhost:3000",
         "Access-Control-Request-Method": "POST",
@@ -120,7 +122,7 @@ def test_cors_preflight_trusted_origin():
     assert response.headers.get("access-control-allow-credentials") is None
 
 def test_cors_preflight_untrusted_origin_rejected():
-    """Verify untrusted origin is NOT granted CORS allow origin headers (H4)."""
+    """Verify untrusted origin is NOT granted CORS allow origin headers."""
     headers = {
         "Origin": "http://evil-unauthorized-domain.com",
         "Access-Control-Request-Method": "POST",
@@ -131,13 +133,13 @@ def test_cors_preflight_untrusted_origin_rejected():
     assert response.headers.get("access-control-allow-origin") != "*"
 
 def test_document_download_not_found():
-    """Verify 404 response for missing documents without triggering disk generation (M8)."""
+    """Verify 404 response for missing documents without triggering disk generation."""
     response = client.get("/api/v1/documents/non_existent_fixture_file.pdf")
     assert response.status_code == 404
     assert response.json()["detail"] == "Document fixture not found"
 
 def test_lead_capture_validation_invalid_email():
-    """Verify lead capture rejects invalid email with 422 (H5)."""
+    """Verify lead capture rejects invalid email with 422."""
     payload = {
         "email": "not-a-valid-email",
         "company_name": "Valid Company Inc."
@@ -146,7 +148,7 @@ def test_lead_capture_validation_invalid_email():
     assert response.status_code == 422
 
 def test_lead_capture_validation_missing_required_fields():
-    """Verify lead capture rejects payload missing required company_name with 422 (H5)."""
+    """Verify lead capture rejects payload missing required company_name with 422."""
     payload = {
         "email": "valid@company.com"
     }
@@ -154,7 +156,7 @@ def test_lead_capture_validation_missing_required_fields():
     assert response.status_code == 422
 
 def test_lead_capture_validation_forbidden_extra_fields():
-    """Verify lead capture rejects unmodeled extra fields with 422 (H5)."""
+    """Verify lead capture rejects unmodeled extra fields with 422."""
     payload = {
         "email": "valid@company.com",
         "company_name": "Valid Company Inc.",
@@ -164,7 +166,7 @@ def test_lead_capture_validation_forbidden_extra_fields():
     assert response.status_code == 422
 
 def test_lead_capture_payload_too_large():
-    """Verify lead capture rejects payloads larger than 16 KB with 413 (H5)."""
+    """Verify lead capture rejects payloads larger than 16 KB with 413."""
     payload = {
         "email": "valid@company.com",
         "company_name": "x" * 20000
@@ -173,7 +175,7 @@ def test_lead_capture_payload_too_large():
     assert response.status_code == 413
 
 def test_lead_capture_rate_limiting():
-    """Verify in-memory sliding window rate limiter triggers 429 on abuse (H5)."""
+    """Verify in-memory sliding window rate limiter triggers 429 on abuse."""
     from app.api.endpoints import leads_rate_limiter
     leads_rate_limiter.reset()
     payload = {
@@ -194,7 +196,7 @@ def test_lead_capture_rate_limiting():
 
 
 def test_lead_capture_rejects_missing_or_false_privacy_consent():
-    """Verify POST /api/v1/leads enforces privacy_consent: Literal[True] (M13)."""
+    """Verify POST /api/v1/leads enforces privacy_consent: Literal[True]."""
     res_missing = client.post(
         "/api/v1/leads",
         json={"email": "valid@company.com", "company_name": "Valid Corp"},
@@ -265,7 +267,7 @@ def test_lead_store_sqlite_persistence_and_supabase_mock(tmp_path, monkeypatch):
 
 
 def test_rate_limiter_evicts_stale_ips_and_stays_bounded():
-    """Verify InMemoryRateLimiter stays bounded under unique-IP flood (H5)."""
+    """Verify InMemoryRateLimiter stays bounded under unique-IP flood."""
     from app.api.endpoints import InMemoryRateLimiter
 
     limiter = InMemoryRateLimiter(requests_per_minute=5, max_tracked_ips=50)
@@ -274,7 +276,7 @@ def test_rate_limiter_evicts_stale_ips_and_stays_bounded():
     assert len(limiter._requests) <= 50
 
 def test_telemetry_validation_forbidden_extra_fields():
-    """Verify telemetry rejects unmodeled extra fields with 422 (H5)."""
+    """Verify telemetry rejects unmodeled extra fields with 422."""
     payload = {
         "event_type": "discrepancy_hover",
         "unauthorized_field": "data"
@@ -283,7 +285,7 @@ def test_telemetry_validation_forbidden_extra_fields():
     assert response.status_code == 422
 
 def test_telemetry_payload_too_large():
-    """Verify telemetry rejects payloads larger than 32 KB with 413 (H5)."""
+    """Verify telemetry rejects payloads larger than 32 KB with 413."""
     payload = {
         "event_type": "discrepancy_hover",
         "metadata": {"bloat": "x" * 40000}
@@ -292,7 +294,7 @@ def test_telemetry_payload_too_large():
     assert response.status_code == 413
 
 def test_telemetry_rate_limiting():
-    """Verify in-memory sliding window rate limiter triggers 429 on abuse (H5)."""
+    """Verify in-memory sliding window rate limiter triggers 429 on abuse."""
     from app.api.endpoints import telemetry_rate_limiter
     telemetry_rate_limiter.reset()
     payload = {
@@ -309,7 +311,7 @@ def test_telemetry_rate_limiting():
     telemetry_rate_limiter.reset()
 
 def test_scenarios_monetary_fields_are_decimal_strings():
-    """Verify /api/v1/scenarios returns monetary exposures as Decimal strings (H8)."""
+    """Verify /api/v1/scenarios returns monetary exposures as Decimal strings."""
     response = client.get("/api/v1/scenarios")
     assert response.status_code == 200
     scenarios = response.json()
@@ -324,9 +326,9 @@ def test_scenarios_monetary_fields_are_decimal_strings():
         assert d > Decimal("0.00")
 
 def test_no_circular_asgi_proxy():
-    """Verify _ASGIAppProxy is eliminated from endpoints module (L2)."""
+    """Verify _ASGIAppProxy is eliminated from endpoints module."""
     import app.api.endpoints as ep
-    assert not hasattr(ep, "_ASGIAppProxy"), "Circular-import _ASGIAppProxy still exists in endpoints (L2)"
+    assert not hasattr(ep, "_ASGIAppProxy"), "Circular-import _ASGIAppProxy still exists in endpoints"
 
 def test_audit_upload_non_pdf_fails_400():
     """Verify POST /api/v1/audit/upload rejects non-PDF files with 400."""
@@ -356,13 +358,18 @@ def test_audit_upload_valid_pdf_succeeds_200():
     assert response.status_code == 200
     data = response.json()
     assert data["concept_id"] == "concept_1_customs"
-    assert "RUN-2026-UPLOAD-" in data["audit_run_id"]
+    assert data["source"] == "upload"
+    assert data["document_url"] == ""  # the UI keeps the uploaded file's own blob URL
+    assert data["document_filename"] == "my_custom_invoice.pdf"
+    assert data["audit_run_id"].startswith("RUN-")
     assert len(data["discrepancies"]) >= 3
-    assert data["metrics"]["penalty_exposure_avoided"] == "125000.00"
+    assert data["metrics"]["penalty_exposure_avoided"] == "62500.00"
+    import hashlib
+    assert data["document_sha256"] == hashlib.sha256(pdf_bytes).hexdigest()
 
 def test_audit_run_id_changes_when_byte_past_4096_changes():
     """
-    Verify audit_run_id hashes entire file content (M4),
+    Verify audit_run_id hashes entire file content,
     so modifying bytes well past byte 4096 changes the audit_run_id!
     """
     from app.services.extractor import extractor_service

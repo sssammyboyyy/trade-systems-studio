@@ -13,14 +13,19 @@ import sys
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(REPO_ROOT, "backend-engine")
-VENV_PYTHON = os.path.join(BACKEND_DIR, ".venv", "Scripts", "python.exe")
-if not os.path.exists(VENV_PYTHON):
-    VENV_PYTHON = sys.executable or "python"
+VENV_PYTHON = sys.executable or "python"
 
-DOC_FILES = [
-    os.path.join(REPO_ROOT, "README.md"),
-    os.path.join(REPO_ROOT, "docs", "TRADETECH_SYSTEMS_ARCHITECTURE_WHITEPAPER.md"),
-]
+def _doc_files() -> list[str]:
+    """Every Markdown doc plus frontend sources that might quote a test count."""
+    files = [os.path.join(REPO_ROOT, "README.md"), os.path.join(REPO_ROOT, "GLOSSARY.md")]
+    for root, _, names in os.walk(os.path.join(REPO_ROOT, "docs")):
+        files += [os.path.join(root, n) for n in names if n.endswith(".md")]
+    for root, _, names in os.walk(os.path.join(REPO_ROOT, "frontend-dashboard", "src")):
+        files += [os.path.join(root, n) for n in names if n.endswith((".tsx", ".ts"))]
+    return files
+
+
+DOC_FILES = _doc_files()
 
 BANNED_COMMODITY_TERMS = [
     "OCR tool",
@@ -29,9 +34,11 @@ BANNED_COMMODITY_TERMS = [
     "invoice reader",
 ]
 
+# Any "N/N ... tests" or "N tests" / "N automated tests" claim, in prose or badges.
 TEST_COUNT_PATTERNS = [
-    re.compile(r"\b(\d+)/(\d+)\s+(?:backend\s+)?tests?\s+passing\b", re.IGNORECASE),
+    re.compile(r"\b(\d{2,4})/(\d{2,4})\b(?=[^\n]{0,40}\b(?:tests?|pytest)\b)", re.IGNORECASE),
     re.compile(r"Pytest-(\d+)%2F(\d+)%20Passing", re.IGNORECASE),
+    re.compile(r"\b(\d{2,4})()\s+(?:automated\s+|backend\s+|pytest\s+|verified\s+)*tests?\b(?!\s+per)", re.IGNORECASE),
 ]
 
 
@@ -67,32 +74,29 @@ def check_or_sync_metrics(count: int, check_only: bool) -> int:
         updated = content
         for pat in TEST_COUNT_PATTERNS:
             for m in pat.finditer(content):
-                a, b = int(m.group(1)), int(m.group(2))
+                a = int(m.group(1))
+                b = int(m.group(2)) if m.group(2) else a
                 if a != count or b != count:
                     if check_only:
-                        print(f"METRIC DRIFT: {rel} contains '{m.group(0)}' (expected {count}/{count})")
+                        line = content.count("\n", 0, m.start()) + 1
+                        print(f"METRIC DRIFT: {rel}:{line} contains '{m.group(0)}' (expected {count})")
                         drift_count += 1
             if not check_only:
-                if "Pytest-" in pat.pattern:
-                    updated = pat.sub(f"Pytest-{count}%2F{count}%20Passing", updated)
-                else:
-                    updated = pat.sub(
-                        lambda mm: re.sub(r"\d+/\d+", f"{count}/{count}", mm.group(0)),
-                        updated,
-                    )
+                def _fix(mm: re.Match) -> str:
+                    text, base = mm.group(0), mm.start()
+                    for gi in sorted((g for g in (1, 2) if mm.group(g)), reverse=True):
+                        a0, b0 = mm.start(gi) - base, mm.end(gi) - base
+                        text = text[:a0] + str(count) + text[b0:]
+                    return text
+
+                updated = pat.sub(_fix, updated)
 
         if not check_only and updated != content:
             with open(doc, "w", encoding="utf-8") as f:
                 f.write(updated)
-            print(f"Synchronized test metrics in {rel} -> {count}/{count}")
+            print(f"Synchronized test metrics in {rel} -> {count}")
 
     metrics_ts = os.path.join(REPO_ROOT, "frontend-dashboard", "src", "lib", "metrics.ts")
-    expected_ts = f"""/**
- * Single Source of Truth for verified pytest test count and system metrics.
- * Maintained in strict parity with `pytest tests/` output.
- */
-export const VERIFIED_PYTEST_COUNT = {count};
-"""
     if os.path.exists(metrics_ts):
         with open(metrics_ts, "r", encoding="utf-8") as f:
             current_ts = f.read()
@@ -100,19 +104,12 @@ export const VERIFIED_PYTEST_COUNT = {count};
         current_val = int(match_ts.group(1)) if match_ts else -1
         if current_val != count:
             if check_only:
-                print(
-                    f"METRIC DRIFT: frontend-dashboard/src/lib/metrics.ts has "
-                    f"VERIFIED_PYTEST_COUNT = {current_val} (expected {count})"
-                )
+                print(f"METRIC DRIFT: metrics.ts has VERIFIED_PYTEST_COUNT = {current_val} (expected {count})")
                 drift_count += 1
             else:
                 with open(metrics_ts, "w", encoding="utf-8") as f:
-                    f.write(expected_ts)
+                    f.write(re.sub(r"VERIFIED_PYTEST_COUNT\s*=\s*\d+", f"VERIFIED_PYTEST_COUNT = {count}", current_ts))
                 print(f"Synchronized metrics.ts -> {count}")
-    elif not check_only:
-        with open(metrics_ts, "w", encoding="utf-8") as f:
-            f.write(expected_ts)
-        print(f"Created metrics.ts -> {count}")
 
     return drift_count
 

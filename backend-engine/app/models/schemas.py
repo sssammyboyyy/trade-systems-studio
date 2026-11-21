@@ -77,6 +77,18 @@ class KillShotMetrics(BaseModel):
     def serialize_decimal(self, v: Decimal) -> str:
         return f"{v:.2f}"
 
+def default_engagement_policy() -> Dict[str, Any]:
+    """Default tenant policy snapshot (hashed into every run digest)."""
+    return {
+        "policy_id": "DEFAULT-FORWARDER-TIER-1",
+        "auto_hold_threshold_usd": 10000.0,
+        "commercial_freight_tolerance_usd": 25.0,
+        "statutory_floor_enforced": True,
+        "fmc_free_time_days": 4,
+        "assist_amortization_method": "first_entry_lump_sum",
+    }
+
+
 class AuditResult(BaseModel):
     """
     Complete audit result payload for a specific concept, with immutable provenance
@@ -93,25 +105,28 @@ class AuditResult(BaseModel):
     discrepancies: List[Discrepancy]
     extracted_data: Dict[str, Any]
     offline_fallback_active: bool = False
-    audit_run_id: str = Field(default="RUN-2026-USC1592-PROV", description="Content-addressed deterministic audit identifier")
-    calc_version: str = Field(default="2026.1.0", description="Semantic statutory kernel calculation version")
+    audit_run_id: str = Field(default="RUN-UNSET", description="Short form of run_digest")
+    run_digest: Optional[str] = Field(
+        default=None,
+        description="SHA-256(calc_version | canonical(engagement_policy) | ruleset_hash | document_sha256) per ADR-001",
+    )
+    document_sha256: Optional[str] = Field(default=None, description="SHA-256 of the audited document bytes")
+    ruleset_hash: Optional[str] = Field(default=None, description="SHA-256 of the rule-module sources")
+    calc_version: str = Field(default="2026.2.0", description="Calculation kernel version")
     executed_at: Optional[str] = Field(default=None, description="ISO 8601 UTC execution timestamp")
-    quarantine_status: Optional[str] = Field(default=None, description="QUARANTINED | RELEASED | ESCALATED")
+    as_of_date: Optional[str] = Field(default=None, description="Date used for interest accrual and time limits")
+    source: Literal["fixture", "upload", "custom_payload"] = Field(default="fixture", description="What was audited")
+    missing_fields: List[str] = Field(default_factory=list, description="Required fields not found in the document")
+    quarantine_reasons: List[str] = Field(default_factory=list, description="Why the release gate held the document")
+    quarantine_status: Optional[str] = Field(default=None, description="QUARANTINED | RELEASED")
     engagement_policy: Dict[str, Any] = Field(
-        default_factory=lambda: {
-            "policy_id": "DEFAULT-FORWARDER-TIER-1",
-            "auto_hold_threshold_usd": 10000.0,
-            "commercial_freight_tolerance_usd": 25.0,
-            "statutory_floor_enforced": True,
-            "fmc_free_time_days": 4,
-            "assist_amortization_method": "first_entry_lump_sum"
-        },
+        default_factory=default_engagement_policy,
         description="Active tenant policy tolerances (strictly bounded by statutory floor)"
     )
 
 class LeadCaptureRequest(BaseModel):
     """
-    Validated lead capture request with strict email and length bounds (H5).
+    Validated lead capture request with strict email and length bounds.
     """
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -124,7 +139,7 @@ class LeadCaptureRequest(BaseModel):
 
 class TelemetryEvent(BaseModel):
     """
-    Validated telemetry event with bounded attributes and size constraints (H5).
+    Validated telemetry event with bounded attributes and size constraints.
     """
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 

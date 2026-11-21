@@ -58,8 +58,12 @@ def test_assist_valuation_audit_math():
     # Prior disclosure tender = 1,622.70 + 117.65 = 1,740.35
     assert audit.prior_disclosure_tender_amount == Decimal("1740.35")
 
-    # Total liability avoided = 6,490.80 - 1,740.35 = 4,750.45
-    assert audit.total_liability_avoided == Decimal("4750.45")
+    # Negligence maximum (2x, 19 U.S.C. 1592(c)(3)): 3,245.40
+    assert audit.negligence_penalty_exposure == Decimal("3245.40")
+
+    # After a prior disclosure the negligence penalty is limited to interest (1592(c)(4)(B)):
+    # 3,245.40 - 117.65 = 3,127.75 avoided
+    assert audit.total_liability_avoided == Decimal("3127.75")
 
 
 def test_prior_disclosure_letter_generation():

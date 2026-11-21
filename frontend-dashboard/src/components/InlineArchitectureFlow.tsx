@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Cpu, CheckCircle2, ShieldCheck, ArrowRight, Code, Database, Network } from "lucide-react";
+import { FileText, Cpu, CheckCircle2, ShieldCheck, ArrowRight, Code, Network } from "lucide-react";
 import { VERIFIED_PYTEST_COUNT } from "@/lib/metrics";
 
 interface PipelineStage {
@@ -19,22 +19,22 @@ const STAGES: PipelineStage[] = [
   {
     id: "ingest",
     step: "Stage 01",
-    title: "Multi-Format Ingestion",
-    subtitle: "PDF, EDI 810/856 & Scans",
+    title: "Document Ingestion",
+    subtitle: "Text-layer PDF, 5 MB / 50 pages",
     icon: <FileText className="w-4 h-4" />,
     serviceFile: "backend-engine/app/services/extractor.py",
     contract: "Stream[bytes] → RawLayoutTokens",
     details: [
-      "Zero OCR cloud costs via local document stream parser",
-      "Handles corrupted scanned bills of lading and CBP 7501 forms",
-      "Fallback deterministic mock engine for zero-key offline environments",
+      "Streamed upload with size cap, %PDF- magic-byte check and SHA-256 of the bytes",
+      "Corrupt or encrypted PDFs are rejected with HTTP 422, never a 500",
+      "Scans without a text layer are held for review: no OCR, nothing guessed",
     ],
   },
   {
     id: "docling",
     step: "Stage 02",
     title: "Spatial Layout Extraction",
-    subtitle: "pypdf / Docling Layout Parser",
+    subtitle: "pypdf text layer + layout boxes",
     icon: <Cpu className="w-4 h-4" />,
     serviceFile: "backend-engine/app/services/layout_extractor.py",
     contract: "Normalized Coordinates [0, 1000) Space",
@@ -55,7 +55,7 @@ const STAGES: PipelineStage[] = [
     details: [
       "Absolute ban on LLM arithmetic (strict Decimal with ROUND_HALF_UP)",
       "19 U.S.C. § 1592 civil fraud & negligence penalty ladders",
-      "FMC Docket 21-08 demurrage & detention accessorial overbilling gates",
+      "Detention free-time and 46 CFR Part 541 billing checks",
     ],
   },
   {
@@ -92,7 +92,7 @@ export const InlineArchitectureFlow: React.FC = () => {
   const [activeStage, setActiveStage] = useState<PipelineStage>(STAGES[2]);
 
   return (
-    <div className="w-full max-w-full overflow-hidden my-4 bg-[#0F172A] border border-slate-800 rounded-2xl p-4 sm:p-6 font-mono">
+    <div className="w-full max-w-full overflow-hidden my-4 bg-terminal-slate border border-slate-800 rounded-2xl p-4 sm:p-6 font-mono">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">

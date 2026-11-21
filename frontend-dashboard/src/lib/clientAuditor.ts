@@ -1,5 +1,9 @@
 import type { AuditResult, Discrepancy } from "./types";
-import { formatUsd, parseCents, centsToDecimalString } from "./money";
+
+/**
+ * In-browser keyword scanner, used only when no backend is reachable. It never computes
+ * dollar amounts and never releases a document: every result is QUARANTINED for review.
+ */
 
 export interface ClientAuditOptions {
   file: File;
@@ -21,6 +25,10 @@ export async function auditUploadedPdf(file: File): Promise<AuditResult> {
 
   const blobUrl = URL.createObjectURL(file);
   const arrayBuffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", arrayBuffer.slice(0));
+  const documentSha256 = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
   const pdfDoc = await loadingTask.promise;
@@ -28,28 +36,32 @@ export async function auditUploadedPdf(file: File): Promise<AuditResult> {
 
   const items: ExtractedToken[] = [];
 
-  // Multi-page extraction loop (C4)
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
     const page = await pdfDoc.getPage(pageNum);
     const textContent = await page.getTextContent();
+    // The viewport transform applies /Rotate and the MediaBox origin, so positions match
+    // what the viewer renders (text-item transforms are in unrotated user space).
     const viewport = page.getViewport({ scale: 1.0 });
-
-    const pageHeight = viewport.height;
     const pageWidth = viewport.width;
+    const pageHeight = viewport.height;
 
     for (const rawItem of textContent.items) {
-      const item = rawItem as any;
-      const tx = item.transform; // [scaleX, skewY, skewX, scaleY, transX, transY]
-      const x = tx[4];
-      const y = tx[5];
-      const width = item.width || 40;
-      const height = item.height || 12;
+      if (!("str" in rawItem) || !rawItem.str.trim()) continue;
+      const item = rawItem as { str: string; transform: number[]; width: number; height: number };
+      const m = pdfjs.Util.transform(viewport.transform, item.transform);
+      const fontHeight = Math.hypot(m[2], m[3]) || item.height || 12;
+      const rotated = Math.abs(m[1]) > Math.abs(m[0]);
+      const runLength = (item.width || 40) * (viewport.scale || 1);
+      // m[4], m[5] is the text baseline origin in top-left viewport space
+      const left = rotated ? m[4] - fontHeight : m[4];
+      const top = rotated ? m[5] : m[5] - fontHeight;
+      const w = rotated ? fontHeight : runLength;
+      const h = rotated ? runLength : fontHeight;
 
-      // Normalize to half-open interval [0, 1000) where (0,0) is top-left
-      const normX = Math.max(0, Math.min(995.0, (x / pageWidth) * 1000));
-      const normY = Math.max(0, Math.min(995.0, ((pageHeight - y - height) / pageHeight) * 1000));
-      const normW = Math.max(5.0, Math.min(1000.0 - normX - 0.1, (width / pageWidth) * 1000));
-      const normH = Math.max(5.0, Math.min(1000.0 - normY - 0.1, (height / pageHeight) * 1000));
+      const normX = Math.max(0, Math.min(995.0, (left / pageWidth) * 1000));
+      const normY = Math.max(0, Math.min(995.0, (top / pageHeight) * 1000));
+      const normW = Math.max(5.0, Math.min(1000.0 - normX - 0.1, (w / pageWidth) * 1000));
+      const normH = Math.max(5.0, Math.min(1000.0 - normY - 0.1, (h / pageHeight) * 1000));
 
       items.push({
         text: item.str,
@@ -69,15 +81,12 @@ export async function auditUploadedPdf(file: File): Promise<AuditResult> {
   let detectedIncoterm = "UNSPECIFIED";
   let hasInsuranceMention = false;
 
-  // 1. Incoterms & Valuation Check
+  // 1. Incoterms
   if (upperText.includes("CIF") || upperText.includes("C.I.F.")) {
     detectedIncoterm = "CIF";
     if (upperText.includes("INSURANCE") || upperText.includes("MARINE")) {
       hasInsuranceMention = true;
     } else {
-      // Omitted marine cargo insurance on CIF entry (19 CFR § 152.103 / 19 U.S.C. § 1401a)
-      // Statutory truth: international freight and insurance are deductions under US valuation law.
-      // Omitting deduction overstates dutiable value (duty overpayment), not an underpayment penalty.
       const cifItem = items.find((i) => i.text.toUpperCase().includes("CIF")) || {
         x: 50.0,
         y: 120.0,
@@ -89,9 +98,9 @@ export async function auditUploadedPdf(file: File): Promise<AuditResult> {
       discrepancies.push({
         id: "client-disc-cif-01",
         concept_id: "concept_1_customs",
-        title: "Missing Marine Insurance Deduction on CIF Entry",
+        title: "CIF Invoice Without Itemised Insurance (keyword scan)",
         description:
-          "Invoice declared CIF without separate marine cargo insurance item. Under 19 U.S.C. § 1401a(b)(4)(A) and 19 CFR § 152.103, international freight and insurance are statutory deductions; omission overstates dutiable transaction value (excess duty overpayment).",
+          "The invoice mentions CIF terms but no insurance line. International freight and insurance are excluded from transaction value (19 U.S.C. § 1401a(b)(4)(A)) only when itemised. No amount is computed by the browser scanner.",
         statutory_code: "19 CFR § 152.103 / 19 U.S.C. § 1401a",
         severity: "warning",
         exposure_amount: "0.00",
@@ -128,8 +137,8 @@ export async function auditUploadedPdf(file: File): Promise<AuditResult> {
       concept_id: "concept_2_freight",
       title: "Potential Accessorial Surcharge Keyword Detected",
       description:
-        "Surcharge keyword (chassis split / detention) identified by client scanner. Flagged for carrier tariff review under 46 U.S.C. § 41104(a) / FMC Docket 21-08.",
-      statutory_code: "46 U.S.C. § 41104(a) / FMC Docket 21-08",
+        "A chassis split or detention charge is mentioned. Check it against the service contract and, for detention, the 46 CFR Part 541 billing requirements. No amount is computed by the browser scanner.",
+      statutory_code: "Service contract / 46 CFR Part 541",
       severity: "warning",
       exposure_amount: "0.00",
       confidence: 0.75,
@@ -173,5 +182,13 @@ export async function auditUploadedPdf(file: File): Promise<AuditResult> {
       inspection_type: "Client-Side Offline Extraction: Requires Backend Audit Verification",
     },
     offline_fallback_active: true,
+    audit_run_id: `LOCAL-${documentSha256.slice(0, 16).toUpperCase()}`,
+    document_sha256: documentSha256,
+    calc_version: "browser-keyword-scan",
+    executed_at: new Date().toISOString(),
+    source: "client",
+    missing_fields: [],
+    quarantine_reasons: ["BROWSER_SCAN_ONLY"],
+    quarantine_status: "QUARANTINED",
   };
 }

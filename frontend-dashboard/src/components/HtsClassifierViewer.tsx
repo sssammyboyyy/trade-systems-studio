@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { TabularAmount } from "./TabularAmount";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { HTSClassificationResult, GRIDecisionNode } from "@/lib/types";
 import { fetchHtsPreset, isOfflineMode } from "@/lib/api";
 import { soundEngine } from "@/lib/audio";
@@ -52,9 +52,9 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0B0F19] text-[#F8FAFC] overflow-hidden">
+    <div aria-busy={loading} className="flex-1 flex flex-col bg-canvas-dark text-ink-primary overflow-hidden">
       {/* Top Controller Bar */}
-      <div className="border-b border-[#1F2937] bg-[#0F172A]/90 backdrop-blur px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="border-b border-terminal-subtle bg-terminal-slate/90 backdrop-blur px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -67,7 +67,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
               </span>
             )}
           </div>
-          <p className="text-xs text-[#94A3B8] mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Path-Dependent WCO GRI 1 to 6 Reasoning Engine with Element-Wise Confidence Gating & Decimal Landed Cost
           </p>
         </div>
@@ -83,7 +83,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                 className={`px-3 py-1.5 text-xs font-mono font-medium rounded transition-all flex items-center gap-2 border ${
                   isActive
                     ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/40 shadow-sm"
-                    : "bg-[#0F172A] text-[#94A3B8] border-[#1F2937] hover:border-slate-600 hover:text-ink-primary"
+                    : "bg-terminal-slate text-slate-400 border-terminal-subtle hover:border-slate-600 hover:text-ink-primary"
                 }`}
               >
                 <span>{opt.label}</span>
@@ -101,28 +101,28 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
         {/* Left Column: WCO GRI Hierarchical Decision Tree */}
         <div className="lg:col-span-8 space-y-6">
           {/* Header Card */}
-          <div className="p-5 rounded-lg border border-[#1F2937] bg-[#0F172A] relative overflow-hidden">
+          <div className="p-5 rounded-lg border border-terminal-subtle bg-terminal-slate relative overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1.5 max-w-xl">
                 <div className="flex items-center gap-2.5">
                   <span className="px-2 py-0.5 text-[10px] font-mono tracking-widest uppercase bg-slate-800 text-slate-300 border border-slate-700 rounded">
                     Origin: {data?.country_of_origin || "CN"}
                   </span>
-                  <span className="text-xs text-[#64748B] font-mono">
+                  <span className="text-xs text-slate-500 font-mono">
                     ID: {data?.item_id}
                   </span>
                 </div>
                 <h3 className="text-base font-semibold text-ink-primary">
                   {data?.product_title || "Loading..."}
                 </h3>
-                <p className="text-xs text-[#94A3B8] leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   {data?.input_description}
                 </p>
               </div>
 
               {/* HTS Code & Confidence Badge */}
               <div className="flex flex-col items-end gap-1.5">
-                <div className="text-[11px] font-mono uppercase tracking-wider text-[#64748B]">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
                   Statutory 10-Digit HTS
                 </div>
                 <div
@@ -150,7 +150,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
 
           {/* WCO GRI Step-by-Step Path */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-[#94A3B8] px-1">
+            <div className="flex items-center justify-between text-xs font-mono text-slate-400 px-1">
               <span className="font-semibold uppercase tracking-wider text-slate-400">
                 WCO General Rules of Interpretation (GRI) Path Trace
               </span>
@@ -174,8 +174,8 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                     }}
                     className={`p-4 rounded-lg border transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-[#1E293B] border-cyan-500/60 shadow-lg shadow-cyan-950/20"
-                        : "bg-[#0F172A] border-[#1F2937] hover:border-slate-600"
+                        ? "bg-terminal-elevated border-cyan-500/60 shadow-lg shadow-cyan-950/20"
+                        : "bg-terminal-slate border-terminal-subtle hover:border-slate-600"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -184,7 +184,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                           className={`w-7 h-7 rounded flex items-center justify-center font-mono text-xs font-bold ${
                             isSelected
                               ? "bg-cyan-500 text-black"
-                              : "bg-[#1E293B] text-slate-300"
+                              : "bg-terminal-elevated text-slate-300"
                           }`}
                         >
                           {idx + 1}
@@ -199,7 +199,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                               {node.heading_or_subheading}
                             </span>
                           </div>
-                          <div className="text-xs text-[#94A3B8] mt-0.5">
+                          <div className="text-xs text-slate-400 mt-0.5">
                             {node.description}
                           </div>
                         </div>
@@ -207,7 +207,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
 
                       {/* Confidence Meter */}
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-16 bg-[#1E293B] h-2 rounded-full overflow-hidden">
+                        <div className="w-16 bg-terminal-elevated h-2 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
                               isLowConfidence ? "bg-amber-500" : "bg-emerald-500"
@@ -226,8 +226,8 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                     </div>
 
                     {/* Legal Rationale Box */}
-                    <div className="mt-3 pt-3 border-t border-[#1F2937] text-xs text-[#94A3B8] leading-relaxed">
-                      <div className="font-mono text-[10px] uppercase text-[#64748B] mb-1">
+                    <div className="mt-3 pt-3 border-t border-terminal-subtle text-xs text-slate-400 leading-relaxed">
+                      <div className="font-mono text-[10px] uppercase text-slate-500 mb-1">
                         Statutory Rationale:
                       </div>
                       <p>{node.legal_rationale}</p>
@@ -256,7 +256,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
           </div>
 
           {/* Section & Chapter Notes Cited */}
-          <div className="p-4 rounded-lg border border-[#1F2937] bg-[#0F172A]">
+          <div className="p-4 rounded-lg border border-terminal-subtle bg-terminal-slate">
             <div className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-2">
               <span>🏛️</span>
               <span>Statutory Chapter & Section Notes Cited</span>
@@ -265,7 +265,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
               {data?.chapter_notes_cited.map((note, nIdx) => (
                 <div
                   key={nIdx}
-                  className="text-xs font-mono text-slate-300 bg-[#0F172A] px-3 py-1.5 rounded border border-[#1F2937] flex items-center gap-2"
+                  className="text-xs font-mono text-slate-300 bg-terminal-slate px-3 py-1.5 rounded border border-terminal-subtle flex items-center gap-2"
                 >
                   <span className="text-cyan-400">§</span>
                   <span>{note}</span>
@@ -277,13 +277,13 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
 
         {/* Right Column: Deterministic Landed Cost Calculator */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="p-5 rounded-lg border border-[#1F2937] bg-[#0F172A] space-y-5">
-            <div className="flex items-center justify-between border-b border-[#1F2937] pb-3">
+          <div className="p-5 rounded-lg border border-terminal-subtle bg-terminal-slate space-y-5">
+            <div className="flex items-center justify-between border-b border-terminal-subtle pb-3">
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ink-primary">
                   Deterministic Landed Cost
                 </h4>
-                <div className="text-[11px] text-[#94A3B8]">
+                <div className="text-[11px] text-slate-400">
                   100% Python Decimal Financial Standard
                 </div>
               </div>
@@ -295,7 +295,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
             {/* Live Interactive Inputs */}
             <div className="space-y-3.5">
               <div>
-                <label className="text-[11px] font-mono text-[#94A3B8] uppercase block mb-1">
+                <label className="text-[11px] font-mono text-slate-400 uppercase block mb-1">
                   Entered FOB Value (USD)
                 </label>
                 <div className="relative">
@@ -304,16 +304,16 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                     type="number"
                     value={enteredValue}
                     onChange={(e) => setEnteredValue(Math.max(100, Number(e.target.value) || 0))}
-                    className="w-full bg-[#0B0F19] border border-[#1F2937] rounded px-7 py-1.5 text-xs font-mono text-ink-primary focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-canvas-dark border border-terminal-subtle rounded px-7 py-1.5 text-xs font-mono text-ink-primary focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-[#94A3B8]">Transport Mode</span>
+                <span className="text-xs text-slate-400">Transport Mode</span>
                 <button
                   onClick={() => setIsOceanFreight(!isOceanFreight)}
-                  className="px-2.5 py-1 text-xs font-mono rounded border border-[#1F2937] bg-[#0B0F19] hover:border-slate-500 text-slate-200"
+                  className="px-2.5 py-1 text-xs font-mono rounded border border-terminal-subtle bg-canvas-dark hover:border-slate-500 text-slate-200"
                 >
                   {isOceanFreight ? "🚢 Ocean (HMF 0.125%)" : "✈️ Air / Truck ($0 HMF)"}
                 </button>
@@ -377,7 +377,7 @@ export const HtsClassifierViewer: React.FC<HtsClassifierViewerProps> = ({ onLead
                 <span>⚡</span>
                 <span>Automate 10,000+ SKU Classifications</span>
               </div>
-              <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+              <p className="text-[11px] text-slate-400 leading-relaxed">
                 Connect your ERP catalog. Replace manual broker lag with instant, verifiable WCO GRI reasoning defensible before CBP auditors.
               </p>
               <button

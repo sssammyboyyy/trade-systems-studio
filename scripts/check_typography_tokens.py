@@ -9,6 +9,7 @@ Mechanically asserts zero drift across frontend-dashboard/src:
 5. Zero bg-black / #000000 canvas tokens and zero unguarded text-white glare tokens.
 6. Zero negative tracking (tracking-tight / tracking-tighter) on micro-data elements.
 7. Zero em-dash (U+2014) characters in frontend source files.
+8. Zero raw hex colours in utility classes (tokens only).
 """
 
 import re
@@ -140,7 +141,13 @@ def check_source_file(path: Path) -> None:
                 f"{rel}:{line_no}: Negative tracking applied to micro-data. Dark mode requires positive tracking."
             )
 
-        # 4. Ban em-dash character
+        # 4. Ban raw hex colours in utility classes (use the tailwind.config.ts tokens)
+        if path.suffix in (".tsx", ".ts") and re.search(r"[a-z]-\[#[0-9A-Fa-f]{3,8}\]", line):
+            ERRORS.append(
+                f"{rel}:{line_no}: Raw hex colour in a utility class. Use a token (terminal-*, canvas-*, ink-*)."
+            )
+
+        # 5. Ban em-dash character
         if "\u2014" in line:
             ERRORS.append(f"{rel}:{line_no}: Prohibited em-dash character (\\u2014) detected.")
 

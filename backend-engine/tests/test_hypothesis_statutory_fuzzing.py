@@ -2,10 +2,11 @@
 
 Enforces:
 1. Python Decimal (ROUND_HALF_UP) precision with zero float drift.
-2. MPF (19 CFR § 24.23) min ($31.67) and max ($614.35) statutory caps.
+2. MPF (19 CFR § 24.23) formal-entry caps by fiscal year and informal-entry fees.
 3. HMF (19 CFR § 24.24) 0.125% ad valorem ocean rate.
-4. 19 U.S.C. § 1592 penalty multipliers (0.25x-2.0x negligence, 2.5x-4.0x gross negligence).
-5. 19 CFR § 162.74 Prior Disclosure statutory interest mitigation.
+4. 19 U.S.C. § 1592(c) maximums: 2x / 4x loss of duty, 20% / 40% of dutiable value when no
+   loss, every tier capped by domestic value.
+5. 19 U.S.C. § 1505 interest: every day counted once, leap years on a 366-day basis.
 6. OFAC 50% Rule (31 CFR § 501) DAG aggregation and cycle prevention against yente FollowTheMoney records.
 7. WCO GRI 1-6 hierarchical classification state machine.
 8. CargoWise UniversalInterchange XML schema constraints.
@@ -59,12 +60,20 @@ def test_fuzz_landed_cost_decimal_precision(entered_val: Decimal, duty_rate: Dec
     assert isinstance(result.total_landed_cost, Decimal)
 
 
-@given(entered_val=st.decimals(min_value=Decimal("1.00"), max_value=Decimal("10000000.00"), places=2))
+@given(entered_val=st.decimals(min_value=Decimal("2500.01"), max_value=Decimal("10000000.00"), places=2))
 @settings(max_examples=25)
 def test_fuzz_mpf_statutory_bounds(entered_val: Decimal) -> None:
-    """Proves MPF fee is strictly bounded between $31.67 and $614.35 under 19 CFR § 24.23."""
+    """Formal entries (> $2,500): MPF is clamped to the FY2027 minimum and maximum."""
     result = calculate_landed_cost(entered_value=entered_val, duty_rate_ad_valorem=Decimal("0.05"))
     assert MPF_MIN <= result.mpf_fee <= MPF_MAX
+
+
+@given(entered_val=st.decimals(min_value=Decimal("0.01"), max_value=Decimal("2500.00"), places=2))
+@settings(max_examples=15)
+def test_fuzz_mpf_informal_entries_flat_fee(entered_val: Decimal) -> None:
+    """Informal entries (<= $2,500) pay the flat automated surcharge, not the formal minimum."""
+    result = calculate_landed_cost(entered_value=entered_val, duty_rate_ad_valorem=Decimal("0.05"))
+    assert result.mpf_fee == Decimal("2.77")
 
 
 def test_fuzz_mpf_boundary_exact_minimum() -> None:
@@ -138,58 +147,52 @@ def test_fuzz_valuation_assist_amortization_monotonicity() -> None:
 # 2. 19 U.S.C. § 1592 Penalty Tiers & Prior Disclosure Fuzzing
 # ---------------------------------------------------------------------------
 
-@given(loss=st.decimals(min_value=Decimal("1.00"), max_value=Decimal("1000000.00"), places=2))
-@settings(max_examples=25)
-def test_fuzz_1592_negligence_multiplier_bounds(loss: Decimal) -> None:
-    """Proves statutory negligence penalty range is strictly [0.25 * loss, 2.0 * loss]."""
-    penalties = calculate_1592_penalties(loss)
-    neg_min, neg_max = penalties["negligence"]
-    assert neg_min == quantize_currency(loss * Decimal("0.25"))
-    assert neg_max == quantize_currency(loss * Decimal("2.00"))
-    assert neg_min <= neg_max
+money = st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000000.00"), places=2)
 
 
-@given(loss=st.decimals(min_value=Decimal("1.00"), max_value=Decimal("1000000.00"), places=2))
-@settings(max_examples=25)
-def test_fuzz_1592_gross_negligence_multiplier_bounds(loss: Decimal) -> None:
-    """Proves statutory gross negligence penalty range is strictly [2.5 * loss, 4.0 * loss]."""
-    penalties = calculate_1592_penalties(loss)
-    gn_min, gn_max = penalties["gross_negligence"]
-    assert gn_min == quantize_currency(loss * Decimal("2.50"))
-    assert gn_max == quantize_currency(loss * Decimal("4.00"))
-    assert gn_min <= gn_max
+@given(loss=money)
+@settings(max_examples=40)
+def test_fuzz_1592_revenue_loss_maximums(loss: Decimal) -> None:
+    """19 U.S.C. 1592(c)(2)-(3): 4x and 2x the loss of duty when no domestic value is known."""
+    p = calculate_1592_penalties(loss)
+    assert p["negligence"] == quantize_currency(loss * 2)
+    assert p["gross_negligence"] == quantize_currency(loss * 4)
+    assert p["fraud"] is None  # (c)(1) maximum is the domestic value, which is unknown
 
 
-def test_fuzz_1592_zero_loss_zero_penalty() -> None:
-    """Zero lawful duty loss produces zero statutory penalty exposure."""
-    penalties = calculate_1592_penalties(Decimal("0.00"))
-    assert penalties["negligence"] == (Decimal("0.00"), Decimal("0.00"))
-    assert penalties["gross_negligence"] == (Decimal("0.00"), Decimal("0.00"))
+@given(loss=money, domestic=money)
+@settings(max_examples=60)
+def test_fuzz_1592_never_exceeds_domestic_value(loss: Decimal, domestic: Decimal) -> None:
+    """No 1592 maximum may exceed the domestic value of the merchandise."""
+    p = calculate_1592_penalties(loss, domestic_value=domestic)
+    for tier in ("negligence", "gross_negligence", "fraud"):
+        assert p[tier] is not None and p[tier] <= quantize_currency(domestic)
+    assert p["negligence"] <= p["gross_negligence"] <= p["fraud"]
 
 
-@given(
-    dutiable_val=st.decimals(min_value=Decimal("1000.00"), max_value=Decimal("500000.00"), places=2),
-    duty_loss=st.decimals(min_value=Decimal("100.00"), max_value=Decimal("50000.00"), places=2),
-)
-@settings(max_examples=20)
-def test_fuzz_1592_domestic_value_ceiling(dutiable_val: Decimal, duty_loss: Decimal) -> None:
-    """Under 19 U.S.C. § 1592(c), statutory penalties cannot exceed domestic value of merchandise."""
-    penalties = calculate_1592_penalties(duty_loss)
-    max_gross_neg = penalties["gross_negligence"][1]
-    capped_penalty = min(max_gross_neg, dutiable_val)
-    assert capped_penalty <= dutiable_val
+@given(dutiable=money)
+@settings(max_examples=30)
+def test_fuzz_1592_non_revenue_tiers(dutiable: Decimal) -> None:
+    """With no loss of duty: 20% (negligence) and 40% (gross negligence) of dutiable value."""
+    p = calculate_1592_penalties(Decimal("0.00"), dutiable_value=dutiable)
+    assert p["negligence"] == quantize_currency(dutiable * Decimal("0.20"))
+    assert p["gross_negligence"] == quantize_currency(dutiable * Decimal("0.40"))
 
 
-def test_fuzz_162_74_prior_disclosure_interest_mitigation() -> None:
-    """Proves 19 CFR § 162.74 Prior Disclosure mitigates penalty from 4.0x to statutory interest."""
-    duty_loss = Decimal("31250.00")
-    gross_neg_max = duty_loss * Decimal("4.00")  # $125,000.00
-    statutory_interest = (duty_loss * STATUTORY_INTEREST_RATE * Decimal("9") / Decimal("12")).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP
-    )
-    savings = gross_neg_max - statutory_interest
-    assert savings > Decimal("120000.00")
-    assert statutory_interest < gross_neg_max * Decimal("0.05")
+def test_fuzz_1592_zero_loss_without_dutiable_value_is_not_computable() -> None:
+    p = calculate_1592_penalties(Decimal("0.00"))
+    assert p["negligence"] is None and p["gross_negligence"] is None
+
+
+@given(loss=money, interest=money)
+@settings(max_examples=30)
+def test_fuzz_prior_disclosure_limits(loss: Decimal, interest: Decimal) -> None:
+    """1592(c)(4): fraud -> 100% of the loss of duty; negligence/gross negligence -> interest."""
+    from app.core.penalties import prior_disclosure_penalty
+
+    assert prior_disclosure_penalty("fraud", loss, interest) == quantize_currency(loss)
+    assert prior_disclosure_penalty("negligence", loss, interest) == quantize_currency(interest)
+    assert prior_disclosure_penalty("gross_negligence", loss, interest) == quantize_currency(interest)
 
 
 @given(months=st.integers(min_value=1, max_value=60))
@@ -235,13 +238,25 @@ def test_fuzz_yente_ofac_50_percent_rule_boundary() -> None:
 )
 @settings(max_examples=20)
 def test_fuzz_yente_aggregate_ownership_monotonicity(owner_a: Decimal, owner_b: Decimal) -> None:
-    """Aggregation of blocked shareholder stakes is strictly additive under the OFAC 50% Rule."""
-    total = float(owner_a + owner_b)
-    is_blocked = total >= 50.0
-    if is_blocked:
-        assert total >= 50.0
-    else:
-        assert total < 50.0
+    """Two blocked shareholders' stakes aggregate; the engine blocks exactly at >= 50%."""
+    screener = SanctionsScreener()
+    screener.networks = {
+        "t": {
+            "target": {"id": "t", "label": "T", "is_blocked": False},
+            "nodes": [
+                {"id": "t", "label": "T", "is_blocked": False},
+                {"id": "a", "label": "A", "is_blocked": True},
+                {"id": "b", "label": "B", "is_blocked": True},
+            ],
+            "edges": [
+                {"source_id": "a", "target_id": "t", "ownership_pct": float(owner_a)},
+                {"source_id": "b", "target_id": "t", "ownership_pct": float(owner_b)},
+            ],
+        }
+    }
+    pct = screener.calculate_effective_blocked_ownership("t")
+    assert pct == float(owner_a + owner_b)
+    assert (pct >= 50.0) == (owner_a + owner_b >= Decimal("50"))
 
 
 def test_fuzz_yente_multi_hop_indirect_ownership() -> None:
@@ -427,7 +442,7 @@ def test_fuzz_cargowise_xpath_line_item_reconciliation() -> None:
 # ---------------------------------------------------------------------------
 
 def test_fuzz_freight_demurrage_free_time_boundary() -> None:
-    """Demurrage invoiced within 4-day port free time is 100% unlawful under OSRA 2022."""
+    """Detention billed while the container is still inside free time is not owed."""
     freight_data = {
         "base_freight": "4500.00",
         "billed_fsc_rate": "0.240",
@@ -441,7 +456,7 @@ def test_fuzz_freight_demurrage_free_time_boundary() -> None:
     metrics, discrepancies = audit_freight_bill(freight_data)
     assert metrics.carrier_overbilling_caught == Decimal("1547.50")
     det_disc = next(d for d in discrepancies if "Detention" in d.title)
-    assert "46 CFR § 545.5" in det_disc.statutory_code
+    assert "46 CFR 545.5" in det_disc.statutory_code
 
 
 def test_fuzz_freight_chassis_split_fee_detection() -> None:
@@ -490,13 +505,16 @@ def test_fuzz_drawback_99_percent_statutory_refund(lawful_duty: Decimal) -> None
 def test_fuzz_drawback_5_year_time_bar() -> None:
     """Exports occurring > 5 years after import are barred under 19 U.S.C. § 1313(r)."""
     drawback_data = {
-        "dutiable_value": "200000.00",
+        "import_entry": "CBP-7501-1",
+        "entry_date": "2019-01-10",
+        "export_date": "2024-01-11",  # one day past five years
         "duties_paid": "20000.00",
-        "drawback_percentage": "0.99",
-        "is_timely_5yr_window": False,
+        "imported_quantity": "100",
+        "exported_quantity": "100",
+        "direct_identification": True,
     }
     metrics, discrepancies = audit_duty_drawback(drawback_data)
     assert metrics.drawback_unclaimed_unlocked == Decimal("0.00")
     assert len(discrepancies) == 1
-    assert "5-Year Statutory Limit Exceeded" in discrepancies[0].title
-    assert discrepancies[0].statutory_code == "19 U.S.C. § 1313(r)"
+    assert "5-Year Limit" in discrepancies[0].title
+    assert discrepancies[0].statutory_code == "19 U.S.C. 1313(r)(1)"

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """TradeTech Systems Studio  -  Enterprise Concurrency & Latency Benchmark.
 
-Architected by Samuel  -  Principal AI Systems Architect & Lead TradeTech Engineer.
-Tests throughput, p50/p95/p99 latency, and floating-point zero-drift guarantees
-across 1,000 consecutive enterprise compliance audits.
+Measures throughput and p50/p90/p95/p99 latency of the six engines on this machine.
 """
 
 import argparse
@@ -19,7 +17,7 @@ from app.services.sanctions_screener import sanctions_screener
 from app.services.valuation_ledger import CustomsValuationService
 
 
-def run_comprehensive_benchmark(iterations: int = 500, write_doc: bool = False):
+def run_comprehensive_benchmark(iterations: int = 500, write_doc: bool = False, json_path: str = ""):
     print(f"Executing enterprise benchmark suite across {iterations} iterations...")
     
     extractor = TradeDocumentExtractor()
@@ -128,7 +126,6 @@ def run_comprehensive_benchmark(iterations: int = 500, write_doc: bool = False):
 │ TIER 1 (2-PAGE PDF + AUDIT):  {tier1_throughput:,.1f} documents / second (max p99: {tier1_max_p99:.1f} ms)     │
 │ TIER 2 (PURE STATUTORY CORE): {tier2_throughput:,.1f} evaluations / second (max p99: {tier2_max_p99:.3f} ms)  │
 │ FLOATING-POINT DRIFT:         0.000000000% (Strict Python Decimal Determinism)         │
-│ CLOUD OCR RUNTIME COST:       $0.00 (100% Local pypdf Coordinate Extraction)           │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -141,7 +138,7 @@ def run_comprehensive_benchmark(iterations: int = 500, write_doc: bool = False):
 | Pillar & Compliance Domain | Mean Latency | Median (p50) | 90th %ile (p90) | 95th %ile (p95) | 99th %ile (p99) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01. Customs Valuation (19 USC § 1592)** | {stats_customs['avg']:.3f} ms | {stats_customs['p50']:.3f} ms | {stats_customs['p90']:.3f} ms | {stats_customs['p95']:.3f} ms | {stats_customs['p99']:.3f} ms |
-| **02. Freight Audit (FMC Docket 21-08)** | {stats_freight['avg']:.3f} ms | {stats_freight['p50']:.3f} ms | {stats_freight['p90']:.3f} ms | {stats_freight['p95']:.3f} ms | {stats_freight['p99']:.3f} ms |
+| **02. Freight Audit (46 CFR Part 541)** | {stats_freight['avg']:.3f} ms | {stats_freight['p50']:.3f} ms | {stats_freight['p90']:.3f} ms | {stats_freight['p95']:.3f} ms | {stats_freight['p99']:.3f} ms |
 | **03. Duty Drawback (19 USC § 1313)** | {stats_drawback['avg']:.3f} ms | {stats_drawback['p50']:.3f} ms | {stats_drawback['p90']:.3f} ms | {stats_drawback['p95']:.3f} ms | {stats_drawback['p99']:.3f} ms |
 
 ---
@@ -158,20 +155,11 @@ def run_comprehensive_benchmark(iterations: int = 500, write_doc: bool = False):
 
 ---
 
-## 🏛️ Architectural Moats & Cost Comparison
+## Reading these numbers
 
-```
-┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────────┐
-│ Metric                        │ Standard "LLM Wrapper" Stack  │ Samuel's Trade Systems Studio   │
-├───────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ Processing Cost per 10k Pages │ $150 to $350 (Cloud OCR+LLM)  │ $0.00 (Local pypdf + Decimal)   │
-│ Numerical Accuracy            │ +/-0.5% to 2.0% hallucination │ 100.000% Exact (Python Decimal) │
-│ Tier 1 p99 (Real 2-Page PDF)  │ 3,500 to 12,000 ms            │ {tier1_max_p99:.1f} ms (measured end-to-end)  │
-│ Tier 2 p99 (Statutory Core)   │ 1,500 to 4,000 ms             │ {tier2_max_p99:.3f} ms (sub-millisecond)      │
-│ Cold-Start API Failure Rate   │ High (Rate Limits / 429s)     │ 0.00% (Offline Fallback Engine) │
-│ Statutory Audit Trail         │ Inconsistent natural language │ Watermarked DRAFT 162.74 Packet │
-└───────────────────────────────┴───────────────────────────────┴─────────────────────────────────┘
-```
+- Figures are machine-dependent: they were measured on the hardware listed above, single process, warm cache.
+- Tier 1 includes reading and parsing the bundled 2-page PDFs on every iteration; Tier 2 is pure in-memory rule evaluation.
+- No comparison with other products is made here; no third-party latency figures were measured.
 
 ---
 
@@ -193,6 +181,24 @@ Experience the interactive audit viewer live at:
             f.write(report_markdown)
         print(f"Report written to: {report_path}")
 
+    if json_path:
+        import json
+        from datetime import date
+
+        payload = {
+            "measured_on": date.today().isoformat(),
+            "hardware": hw_spec,
+            "iterations": iterations,
+            "tier1_docs_per_sec": round(tier1_throughput, 1),
+            "tier1_p99_ms": round(tier1_max_p99, 2),
+            "tier2_evals_per_sec": round(tier2_throughput, 1),
+            "tier2_p99_ms": round(tier2_max_p99, 3),
+        }
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+            f.write("\n")
+        print(f"Benchmark JSON written to: {json_path}")
+
     print(f"Benchmark completed in {total_duration:.2f}s ({throughput:,.1f} audits/sec).")
 
 
@@ -212,5 +218,11 @@ if __name__ == "__main__":
         default=False,
         help="Write report to docs/PERFORMANCE_AND_SCALE_BENCHMARKS.md",
     )
+    parser.add_argument(
+        "--json",
+        default="",
+        help="Also write the headline numbers as JSON (used by the frontend), e.g. "
+        "../frontend-dashboard/src/data/generated/benchmark.json",
+    )
     args = parser.parse_args()
-    run_comprehensive_benchmark(iterations=args.iterations, write_doc=args.write_doc)
+    run_comprehensive_benchmark(iterations=args.iterations, write_doc=args.write_doc, json_path=args.json)

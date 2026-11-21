@@ -1,316 +1,143 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, CheckCircle2, AlertTriangle, ShieldCheck, DollarSign } from "lucide-react";
-import { sound } from "@/lib/audio";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { TabularAmount } from "./TabularAmount";
+import type { AuditResult } from "@/lib/types";
+import { parseCents } from "@/lib/money";
 
 interface BilledVsLawfulDiffProps {
-  conceptId: string;
+  audit: AuditResult | null;
 }
 
-export const BilledVsLawfulDiff: React.FC<BilledVsLawfulDiffProps> = ({ conceptId }) => {
-  if (conceptId === "client_upload_audit") {
+const cents = (v: unknown): number => (v === null || v === undefined || v === "" ? 0 : Number(parseCents(v as string)));
+const dollars = (c: number) => (c / 100).toFixed(2);
+const usd = (c: number) => (c / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+interface Summary {
+  title: string;
+  cite: string;
+  leftLabel: string;
+  leftNote: string;
+  left: number;
+  rightLabel: string;
+  rightNote: string;
+  right: number;
+  footer: string;
+  tone: "loss" | "gain" | "clean";
+}
+
+/** Two-column "as billed vs reconciled" summary, computed from the audit payload. */
+function summarise(audit: AuditResult): Summary | null {
+  const d = audit.extracted_data ?? {};
+  const findings = audit.discrepancies;
+
+  if (Array.isArray(d.items) && d.items.length > 0) {
+    const stated = d.items.reduce((s: number, it: Record<string, unknown>) => s + cents(it.stated_total), 0);
+    const recalculated = d.items.reduce(
+      (s: number, it: Record<string, unknown>) => s + Math.round(Number(it.quantity) * cents(it.unit_price)),
+      0
+    );
+    const cif = String(d.incoterms ?? "").toUpperCase().startsWith("CIF");
+    const nonDutiable = cif ? cents(d.freight_charge) + cents(d.insurance_charge) : 0;
+    const left = stated + nonDutiable;
+    const mathFindings = findings.filter((f) => f.id.startsWith("disc-c1-02")).length;
+    const clean = left === recalculated && findings.length === 0;
+    return {
+      title: "Invoice total vs reconciled goods value",
+      cite: "19 U.S.C. § 1401a",
+      leftLabel: "As invoiced",
+      leftNote: cif ? `Line totals + ${usd(nonDutiable)} CIF freight/insurance` : "Sum of stated line totals",
+      left,
+      rightLabel: "Reconciled",
+      rightNote: "Quantity × unit price, freight and insurance excluded",
+      right: recalculated,
+      footer: clean
+        ? "No valuation differences found on this invoice."
+        : `${mathFindings} arithmetic error${mathFindings === 1 ? "" : "s"}${cif ? ", CIF charges deducted" : ""}. Difference ${usd(left - recalculated)}.`,
+      tone: clean ? "clean" : "loss",
+    };
+  }
+
+  if (d.base_freight !== undefined && audit.concept_id === "concept_2_freight") {
+    const base = cents(d.base_freight);
+    const fsc = Math.round(base * Number(d.billed_fsc_rate ?? 0));
+    const billed = base + fsc + cents(d.chassis_split_fee) + cents(d.detention_billed);
+    const notOwed = cents(audit.metrics.carrier_overbilling_caught);
+    return {
+      title: "Audited charges vs amount owed",
+      cite: "Service contract / 46 CFR Part 541",
+      leftLabel: "Billed (audited lines)",
+      leftNote: "Base + fuel surcharge + chassis + detention",
+      left: billed,
+      rightLabel: "Owed",
+      rightNote: "After disputed lines are removed",
+      right: billed - notOwed,
+      footer: `${usd(notOwed)} disputed across ${findings.filter((f) => cents(f.exposure_amount) > 0).length} line(s).`,
+      tone: notOwed > 0 ? "loss" : "clean",
+    };
+  }
+
+  if (d.duties_paid !== undefined && audit.concept_id === "concept_3_drawback") {
+    const refund = cents(audit.metrics.drawback_unclaimed_unlocked);
+    return {
+      title: "Duties paid vs drawback refundable",
+      cite: "19 U.S.C. § 1313(j)",
+      leftLabel: "Duties paid on import",
+      leftNote: `Entry ${d.import_entry ?? "not stated"}`,
+      left: cents(d.duties_paid),
+      rightLabel: "Refundable",
+      rightNote: "99% of duties on matched, timely units",
+      right: refund,
+      footer: refund > 0 ? "Eligible for a drawback claim filed by a licensed broker or self-filer." : "No refund established from this document.",
+      tone: refund > 0 ? "gain" : "clean",
+    };
+  }
+  return null;
+}
+
+export const BilledVsLawfulDiff: React.FC<BilledVsLawfulDiffProps> = ({ audit }) => {
+  if (!audit) return null;
+  if (audit.source === "client") {
     return (
-      <div className="my-3 p-3.5 bg-terminal-slate text-ink-primary rounded-lg border border-amber-800/60 shadow-inner font-mono">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[10px] tracking-wider uppercase text-slate-400">
-          <span className="flex items-center gap-1.5 font-bold text-amber-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Browser Heuristic Pattern Inspection
-          </span>
-          <span className="text-amber-400 font-semibold">Demo Heuristic Scanner</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-slate-950/60 border border-slate-800 p-2.5 rounded-md">
-            <div className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center justify-between">
-              <span>Execution Boundary</span>
-              <ShieldCheck className="w-3 h-3 text-slate-400" />
-            </div>
-            <div className="text-slate-300 text-[11px] leading-tight mb-1">
-              Zero External Cloud Calls
-            </div>
-            <div className="text-blue-400 font-bold text-sm">
-              Local Browser
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1">
-              Parsed in browser memory
-            </div>
-          </div>
-
-          <div className="bg-amber-950/30 border border-amber-800/50 p-2.5 rounded-md">
-            <div className="text-[10px] text-amber-300 font-bold uppercase mb-1 flex items-center justify-between">
-              <span>Legal Status</span>
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
-            </div>
-            <div className="text-slate-300 text-[11px] leading-tight mb-1">
-              Informational Only
-            </div>
-            <div className="text-amber-300 font-bold text-sm">
-              Demo Pattern Matcher
-            </div>
-            <div className="text-[10px] text-amber-200/80 mt-1">
-              Does not replace formal audit
-            </div>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => sound.playLock()}
-          className="mt-2.5 px-3 py-1.5 bg-amber-950/40 border border-amber-800/60 rounded-md flex items-center justify-between cursor-pointer hover:bg-amber-950/60 transition-colors"
-        >
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-300">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span>DEMO HEURISTIC INSPECTION: NOT A FORMAL STATUTORY AUDIT</span>
-          </div>
-          <span className="text-[10px] text-amber-400 uppercase font-semibold">Demo Only</span>
-        </div>
+      <div className="my-3 rounded-lg border border-status-amber/40 bg-terminal-slate p-3 font-mono type-caption-mono text-ink-secondary">
+        <span className="font-medium text-ink-amber">Browser keyword scan.</span> No amounts are computed without the backend.
       </div>
     );
   }
+  const s = summarise(audit);
+  if (!s) return null;
 
-  if (conceptId === "concept_clean_fob") {
-    return (
-      <div className="my-3 p-3.5 bg-terminal-slate text-ink-primary rounded-lg border border-emerald-800/60 shadow-inner font-mono">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 type-caption-mono uppercase text-ink-muted">
-          <span className="flex items-center gap-1.5 font-medium text-ink-emerald">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Clean Production Invoice: Verified FOB Terms
-          </span>
-          <span className="text-ink-emerald font-medium">Clean Baseline Verification</span>
-        </div>
+  const leftTone = s.tone === "loss" ? "text-ink-crimson" : "text-ink-numeric";
+  const rightTone = s.tone === "clean" ? "text-ink-numeric" : "text-ink-emerald";
 
-        <div className="grid grid-cols-2 gap-2 type-mono-data">
-          {/* As Billed Column */}
-          <div className="bg-emerald-950/30 border border-emerald-900/60 p-2.5 rounded-md">
-            <div className="type-caption-mono text-ink-emerald font-medium uppercase mb-1 flex items-center justify-between">
-              <span>Vendor Commercial Invoice</span>
-              <CheckCircle2 className="w-3 h-3 text-ink-emerald" />
-            </div>
-            <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-              Line 1: 500 pcs × $45.00
-            </div>
-            <div className="text-ink-emerald font-semibold text-sm tabular-nums">
-              <TabularAmount value={22500} />
-            </div>
-            <div className="type-caption-mono text-emerald-300/80 mt-1">
-              Exact mathematical extension
-            </div>
-          </div>
-
-          {/* Lawful Reconciled Column */}
-          <div className="bg-emerald-950/50 border border-emerald-700/60 p-2.5 rounded-md">
-            <div className="type-caption-mono text-emerald-300 font-medium uppercase mb-1 flex items-center justify-between">
-              <span>Lawful Entered Base</span>
-              <ShieldCheck className="w-3 h-3 text-emerald-300" />
-            </div>
-            <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-              FOB Value + Declared Assist
-            </div>
-            <div className="text-emerald-300 font-semibold text-sm tabular-nums">
-              <TabularAmount value={145250} />
-            </div>
-            <div className="type-caption-mono text-emerald-200/80 mt-1">
-              Zero statutory duty loss
-            </div>
-          </div>
-        </div>
-
-        {/* The Intercept Stamp */}
-        <div 
-          onClick={() => sound.playLock()}
-          className="mt-2.5 px-3 py-1.5 bg-emerald-600/20 border border-emerald-500/50 rounded-md flex items-center justify-between cursor-pointer hover:bg-emerald-600/30 transition-colors"
-        >
-          <div className="flex items-center gap-1.5 type-caption-mono font-medium text-emerald-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-ink-emerald" />
-            <span>CLEAN FOB BASELINE: ZERO 19 U.S.C. § 1592 DISCREPANCIES DETECTED</span>
-          </div>
-          <span className="type-caption-mono text-ink-emerald uppercase font-medium">Baseline Verified</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (conceptId === "concept_1_customs") {
-    return (
-      <div className="my-3 p-3.5 bg-terminal-slate text-ink-primary rounded-lg border border-slate-700/80 shadow-inner font-mono">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 type-caption-mono uppercase text-ink-muted">
-          <span className="flex items-center gap-1.5 font-medium text-ink-cobalt">
-            <span className="w-1.5 h-1.5 rounded-full bg-cobalt-400 animate-pulse" />
-            Billed Invoice vs. Lawful Statutory Base
-          </span>
-          <span className="statutory-cite text-[12px] text-ink-amber">19 CFR § 152.103 Valuation Defect</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 type-mono-data">
-          {/* As Billed Column */}
-          <div className="bg-red-950/40 border border-red-900/60 p-2.5 rounded-md">
-            <div className="type-caption-mono text-ink-crimson font-medium uppercase mb-1 flex items-center justify-between">
-              <span>As Billed (Vendor)</span>
-              <AlertTriangle className="w-3 h-3 text-ink-crimson" />
-            </div>
-            <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-              Line 1: 500 pcs × $45.00
-            </div>
-            <div className="text-ink-crimson font-semibold text-sm tabular-nums">
-              <TabularAmount value={25500} />
-            </div>
-            <div className="type-caption-mono text-red-300/70 mt-1 line-through decoration-red-400">
-              Math: $3,000 arithmetic defect
-            </div>
-          </div>
-
-          {/* Lawful Reconciled Column */}
-          <div className="bg-emerald-950/40 border border-emerald-900/60 p-2.5 rounded-md">
-            <div className="type-caption-mono text-ink-emerald font-medium uppercase mb-1 flex items-center justify-between">
-              <span>Lawful Reconciled Base</span>
-              <CheckCircle2 className="w-3 h-3 text-ink-emerald" />
-            </div>
-            <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-              Correct: 500 pcs × $45.00
-            </div>
-            <div className="text-ink-emerald font-semibold text-sm tabular-nums">
-              <TabularAmount value={22500} />
-            </div>
-            <div className="type-caption-mono text-emerald-300/80 mt-1">
-              Lawful entered customs base
-            </div>
-          </div>
-        </div>
-
-        {/* The Intercept Stamp */}
-        <div 
-          onClick={() => sound.playLock()}
-          className="mt-2.5 px-3 py-1.5 bg-red-600/20 border border-red-500/50 rounded-md flex items-center justify-between cursor-pointer hover:bg-red-600/30 transition-colors"
-        >
-          <div className="flex items-center gap-1.5 type-caption-mono font-medium text-red-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-ink-crimson" />
-            <span>INTERCEPTED: $3,000.00 OVERBILLING WITHHELD PRE-PAYMENT</span>
-          </div>
-          <span className="type-caption-mono text-ink-crimson uppercase font-medium">Protected</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (conceptId === "concept_2_freight") {
-    return (
-      <div className="my-3 p-3.5 bg-terminal-slate text-ink-primary rounded-lg border border-slate-700/80 shadow-inner font-mono">
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 type-caption-mono uppercase text-ink-muted">
-          <span className="flex items-center gap-1.5 font-medium text-ink-cobalt">
-            <span className="w-1.5 h-1.5 rounded-full bg-cobalt-400 animate-pulse" />
-            Ocean Carrier Bill vs. Contract Tariff Rate
-          </span>
-          <span className="statutory-cite text-[12px] text-ink-amber">OSRA 2022 &amp; FMC Docket 21-08</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 type-mono-data">
-          {/* As Invoiced Column */}
-          <div className="bg-red-950/40 border border-red-900/60 p-2.5 rounded-md">
-            <div className="type-caption-mono text-ink-crimson font-medium uppercase mb-1 flex items-center justify-between">
-              <span>Carrier Invoiced Total</span>
-              <AlertTriangle className="w-3 h-3 text-ink-crimson" />
-            </div>
-            <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-              Base + Split + FSC + Detention
-            </div>
-            <div className="text-ink-crimson font-semibold text-sm tabular-nums">
-              <TabularAmount value={7047.5} />
-            </div>
-            <div className="type-caption-mono text-red-300/70 mt-1">
-              3 unauthorized accessorial line items
-            </div>
-          </div>
-
-          {/* Lawful Contract Column */}
-          <div className="bg-emerald-950/40 border border-emerald-900/60 p-2.5 rounded-md">
-            <div className="type-caption-mono text-ink-emerald font-medium uppercase mb-1 flex items-center justify-between">
-              <span>Lawful Contractual Obligation</span>
-              <CheckCircle2 className="w-3 h-3 text-ink-emerald" />
-            </div>
-            <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-              Base $4,850 + Tariff FSC $650
-            </div>
-            <div className="text-ink-emerald font-semibold text-sm tabular-nums">
-              <TabularAmount value={5500} />
-            </div>
-            <div className="type-caption-mono text-emerald-300/80 mt-1">
-              FMC-compliant rate card
-            </div>
-          </div>
-        </div>
-
-        {/* The Intercept Stamp */}
-        <div 
-          onClick={() => sound.playLock()}
-          className="mt-2.5 px-3 py-1.5 bg-red-600/20 border border-red-500/50 rounded-md flex items-center justify-between cursor-pointer hover:bg-red-600/30 transition-colors"
-        >
-          <div className="flex items-center gap-1.5 type-caption-mono font-medium text-red-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-ink-crimson" />
-            <span>INTERCEPTED: $1,547.50 OVERBILLING (21.9% OF CARRIER BILL)</span>
-          </div>
-          <span className="type-caption-mono text-ink-crimson uppercase font-medium">Withheld</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Concept 3: Duty Drawback
   return (
-    <div className="my-3 p-3.5 bg-terminal-slate text-ink-primary rounded-lg border border-slate-700/80 shadow-inner font-mono">
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 type-caption-mono uppercase text-ink-muted">
-        <span className="flex items-center gap-1.5 font-medium text-ink-emerald">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          CBP Form 7501 Duties Paid vs. 99% Re-Export Refund
-        </span>
-        <span className="statutory-cite text-[12px] text-ink-cobalt">19 U.S.C. § 1313(j)(1)</span>
+    <div className="my-3 rounded-lg border border-terminal-subtle bg-terminal-slate p-3.5 font-mono text-ink-primary">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-1 border-b border-terminal-subtle pb-2 type-caption-mono uppercase text-ink-muted">
+        <span className="font-medium text-ink-secondary">{s.title}</span>
+        <span className="statutory-cite text-[12px] normal-case text-ink-cobalt">{s.cite}</span>
       </div>
-
       <div className="grid grid-cols-2 gap-2 type-mono-data">
-        {/* Customs Duties Paid */}
-        <div className="bg-slate-950/60 border border-slate-800 p-2.5 rounded-md">
-          <div className="type-caption-mono text-ink-muted font-medium uppercase mb-1">
-            Historical Duties Remitted
+        {[
+          { label: s.leftLabel, note: s.leftNote, value: s.left, tone: leftTone },
+          { label: s.rightLabel, note: s.rightNote, value: s.right, tone: rightTone },
+        ].map((col) => (
+          <div key={col.label} className="rounded-md border border-terminal-subtle bg-canvas-dark/60 p-2.5">
+            <div className="mb-1 type-caption-mono font-medium uppercase text-ink-muted">{col.label}</div>
+            <div className={`text-sm font-semibold tabular-nums ${col.tone}`}>
+              <TabularAmount value={dollars(col.value)} />
+            </div>
+            <div className="mt-1 type-caption-mono leading-tight text-ink-muted">{col.note}</div>
           </div>
-          <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-            Import Entry Summary 7501
-          </div>
-          <div className="text-ink-numeric font-semibold text-sm tabular-nums">
-            <TabularAmount value={27600} />
-          </div>
-          <div className="type-caption-mono text-ink-muted mt-1">
-            Paid to U.S. Customs Treasury
-          </div>
-        </div>
-
-        {/* Treasury Refund Check */}
-        <div className="bg-emerald-950/40 border border-emerald-900/60 p-2.5 rounded-md">
-          <div className="type-caption-mono text-ink-emerald font-medium uppercase mb-1 flex items-center justify-between">
-            <span>Treasury Direct Cash Refund</span>
-            <CheckCircle2 className="w-3 h-3 text-ink-emerald" />
-          </div>
-          <div className="text-ink-secondary type-caption-mono leading-tight mb-1">
-            99% Lawful Statutory Drawback
-          </div>
-          <div className="text-ink-emerald font-semibold text-sm tabular-nums">
-            <TabularAmount value={27324} />
-          </div>
-          <div className="type-caption-mono text-emerald-300/80 mt-1">
-            Direct Wire to Client Treasury
-          </div>
-        </div>
+        ))}
       </div>
-
-      {/* The Unlock Stamp */}
-      <div 
-        onClick={() => sound.playLock()}
-        className="mt-2.5 px-3 py-1.5 bg-emerald-600/20 border border-emerald-500/50 rounded-md flex items-center justify-between cursor-pointer hover:bg-emerald-600/30 transition-colors"
-      >
-        <div className="flex items-center gap-1.5 type-caption-mono font-medium text-emerald-300">
-          <DollarSign className="w-3.5 h-3.5 text-ink-emerald" />
-          <span>MATCH UNLOCKED: $27,324.00 RE-EXPORT DRAWBACK READY TO HARVEST</span>
-        </div>
-        <span className="type-caption-mono text-ink-emerald uppercase font-medium">Wire Ready</span>
+      <div className="mt-2.5 flex items-center gap-1.5 type-caption-mono text-ink-secondary">
+        {s.tone === "clean" ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-ink-emerald" aria-hidden />
+        ) : (
+          <AlertTriangle className={`h-3.5 w-3.5 ${s.tone === "gain" ? "text-ink-emerald" : "text-ink-amber"}`} aria-hidden />
+        )}
+        <span>{s.footer}</span>
       </div>
     </div>
   );

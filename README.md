@@ -3,7 +3,7 @@
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20Console-0284c7?style=for-the-badge&logo=googlechrome&logoColor=white)](https://sssammyboyyy.github.io/trade-systems-studio/)
 [![Whitepaper](https://img.shields.io/badge/Whitepaper-Interactive%20Edition-8b5cf6?style=for-the-badge&logo=googledocs&logoColor=white)](https://sssammyboyyy.github.io/trade-systems-studio/whitepaper/)
 [![CI](https://github.com/sssammyboyyy/trade-systems-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/sssammyboyyy/trade-systems-studio/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Pytest-230%2F230%20Passing-10b981?style=for-the-badge&logo=pytest&logoColor=white)](#-automated-verification)
+[![Tests](https://img.shields.io/badge/Pytest-260%2F260%20Passing-10b981?style=for-the-badge&logo=pytest&logoColor=white)](#-automated-verification)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.5.29-black?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
@@ -16,9 +16,9 @@
 
 ## 🏛️ Executive Summary & Architectural Moat
 
-Mid-market enterprise importers, customs brokerages, and global forwarders lose **5% to 15% of total freight spend** to carrier billing leakage and face severe **19 U.S.C. § 1592 civil penalties ($100k to $2.4M+)** caused by manual transcription defects and assist omissions.
+Importers, customs brokers and forwarders pay carrier invoices that do not match the contract, leave drawback unclaimed, and carry **19 U.S.C. § 1592** civil penalty exposure from classification, valuation and assist errors on the entry.
 
-Generic language model prompt wrappers fail in regulated international trade because probabilistic text generators hallucinate tariff subheadings, drift during currency and unit conversions, and fail formal U.S. Customs and Border Protection (CBP) or Federal Maritime Commission (FMC) audits.
+Generic language model prompt wrappers fail in regulated international trade because probabilistic text generators hallucinate tariff subheadings, drift during currency and unit conversions, and cannot show the arithmetic behind a figure.
 
 **TradeTech Systems Studio** solves this with an enterprise pre-ingest architecture that pairs **statutory legal reasoning (WCO GRI 1 to 6, 19 U.S.C. § 1401a, 19 U.S.C. § 1592, 19 CFR § 152.103, 31 CFR § 501)** with **strict mathematical determinism (Python `Decimal` serialized end-to-end as strings)** and **local PDF layout extraction (`pypdf` + `LayoutExtractor` on a `[0, 1000)` coordinate grid)**.
 
@@ -29,12 +29,12 @@ Generic language model prompt wrappers fail in regulated international trade bec
 │                                 THE ARCHITECTURAL MOAT                                 │
 ├─────────────────────────┬──────────────────────────────────────────────────────────────┤
 │ Strict Determinism      │ 100% Python Decimal math; string-serialized across API bounds│
-│ Zero-Budget Extraction  │ Local pypdf layout extraction with [0, 1000) coordinates     │
-│ Fail-Closed Invariants  │ Empty inputs yield $0; unknown goods/entities route to HOLD  │
-│ Statutory Accuracy      │ Modeled on 19 USC 1401a/1592/1313, 19 CFR 152.103, FMC 21-08 │
+│ Local Extraction        │ pypdf text layer; findings anchored to the document's text   │
+│ Fail-Closed Invariants  │ Missing fields are None and quarantine; nothing is defaulted │
+│ Statutory Accuracy      │ 19 USC 1401a/1592/1313/1505, 46 CFR 541, dated rate tables   │
 │ Entity Resolution Graph │ Fail-closed cycle-safe multi-tier OFAC 50% Rule traversal    │
 │ WCO GRI State Machine   │ Word-boundary HTS reasoning with mandatory broker review gate│
-│ Ingest Boundary         │ Content-addressed SHA-256 CargoWise UniversalShipment XML    │
+│ Provenance              │ run id = SHA-256(calc, policy, ruleset, document) + ledger   │
 │ Nightmare Suite UI      │ WCAG 2.2 AA dark console with multi-page React-PDF & PII mask│
 └─────────────────────────┴──────────────────────────────────────────────────────────────┘
 ```
@@ -46,7 +46,7 @@ Generic language model prompt wrappers fail in regulated international trade bec
 TradeTech Systems Studio acts as an **Upstream Pre-Ingest and Financial Exception Firewall** deployed ahead of your Transportation Management System (TMS).
 
 1. **Exception Interception:** Intercepts accessorial overbilling and customs valuation discrepancies before shipment data enters downstream TMS workflows.
-2. **Standardized Ingest Boundary:** Generates content-addressed SHA-256 CargoWise `UniversalShipment` XML payloads with deterministic Decimal attribute formatting.
+2. **Standardized Ingest Boundary:** Generates `UniversalShipment`-style XML from the audit result (validated against an in-repo structural subset XSD only; nothing is transmitted to eAdaptor).
 3. **Audit-Ready Provenance:** Every finding binds directly to its legal statute and normalized `[0, 1000)` bounding box, giving licensed brokers and operations teams verifiable evidence before releasing carrier disbursements or customs filings.
 
 ---
@@ -56,21 +56,23 @@ TradeTech Systems Studio acts as an **Upstream Pre-Ingest and Financial Exceptio
 ### 1. Customs Compliance Firewall & 1592 Defense
 - **Statutory Authority:** 19 U.S.C. § 1401a, 19 U.S.C. § 1592 & 19 CFR § 152.103.
 - **The Threat:** Unitemized CIF freight/insurance risking overstatement, unreported buyer-provided assists, quantity-by-unit-price multiplication mismatches, and HTS code misclassifications (e.g. 8471.30 vs 8542.31).
-- **The Defense:** Fail-closed validation (missing required fields return zero fabricated findings) paired with exact statutory penalty modeling for US ports of entry:
-  - **Negligence:** 0.25x to 2.0x lawful duty loss
-  - **Gross Negligence:** 2.5x to 4.0x lawful duty loss
-  - **Fraud:** Up to 100% domestic merchandise value
-- **Outcome:** Catches statutory discrepancies before entry transmission into the Automated Commercial Environment (ACE).
+- **The Defense:** Fail-closed extraction (missing fields quarantine the document) and the statutory maximums of 19 U.S.C. § 1592(c), computed in `app/core/penalties.py`:
+  - **Negligence:** lesser of domestic value or 2x the loss of duty (20% of dutiable value if no loss)
+  - **Gross negligence:** lesser of domestic value or 4x the loss of duty (40% of dutiable value if no loss)
+  - **Fraud:** up to the domestic value
+  - **Prior disclosure:** negligence and gross negligence limited to interest on the loss; fraud to 100% of the loss
+  - Section 301 rates are dated (e.g. 8542 at 25% to 31 Dec 2024, 50% from 1 Jan 2025) and 1505 interest counts every day (366-day years in leap years).
+- **Outcome:** Flags discrepancies before the entry is filed. Culpability is shown as negligence by default; it is a legal determination for counsel.
 
-### 2. Pre-Payment Freight Audit (FMC Docket No. 21-08)
-- **Statutory Authority:** FMC Docket 21-08 (46 CFR § 545.5) & Ocean Shipping Reform Act (OSRA 2022).
-- **The Threat:** Carriers tacking on unwarranted surcharges: unauthorized chassis splits ($285.00), inflated Fuel Surcharge Index (FSC billed at 32.5% vs published DOE/EIA index cap of 24.0%), and detention billed inside port free time (with explicit `None` vs `0` free-day boundary handling).
+### 2. Pre-Payment Freight Audit (46 CFR Part 541)
+- **Authority:** the service contract or tariff, 46 CFR 545.5, and the OSRA 2022 demurrage and detention billing rule (46 CFR Part 541: invoice within 30 days of the last charge, required invoice information, dispute window).
+- **The Threat:** Carriers tacking on unwarranted surcharges: unauthorized chassis splits ($285.00), fuel surcharge billed above the contracted rate (32.5% vs 24.0% on the sample), detention billed inside free time (days counted from the discharge and out-gate dates), and detention invoices that are late or missing required information.
 - **The Defense:** Systematic pre-payment invoice interrogation against baseline ocean contract tariffs and weekly published fuel indices, generating carrier dispute packets from computed Decimal values.
 
 ### 3. Duty Drawback Harvester (19 U.S.C. § 1313)
 - **Statutory Authority:** 19 U.S.C. § 1313 Unused Merchandise & Manufacturing Drawback.
-- **The Threat:** Over $2 Billion in statutory customs duty refunds goes unclaimed annually due to fragmented ERP data across import declarations and export manifests.
-- **The Defense:** Deterministic matching of CBP Form 7501 Import Summaries to paired export Bills of Lading, validating the 5-year statutory time bar and calculating 99% statutory drawback refunds with line-item traceability.
+- **The Threat:** Drawback goes unclaimed because import and export records live in different systems.
+- **The Defense:** Matches the import entry to the export bill of lading on dates, quantities and basis ((j)(1) direct identification or (j)(2) same 8-digit HTS), enforces the 5-year limit of 1313(r)(1), and refunds 99% of the duty on the matched quantity only.
 
 ### 4. Global Sanctions & Corporate Entity Resolution Graph
 - **Statutory Authority:** 31 CFR § 501 / OFAC 50 Percent Rule & BIS Entity List / UVL separation.
@@ -112,16 +114,16 @@ trade-systems-studio/
 │   │   │   ├── sanctions_screener.py # RapidFuzz matcher & fail-closed cycle-safe graph traversal
 │   │   │   ├── hts_classifier.py   # Word-boundary WCO GRI 1-6 classifier with broker review gate
 │   │   │   ├── valuation_ledger.py # GAAP assist amortization & DRAFT prior disclosure worksheets
-│   │   │   ├── cargowise_xml.py    # Content-addressed SHA-256 UniversalShipment XML generator
+│   │   │   ├── cargowise_xml.py    # UniversalShipment-style XML built from the audit result
 │   │   │   ├── customs_audit.py    # 19 U.S.C. § 1401a / § 1592 calculation engine
-│   │   │   ├── freight_audit.py    # Pre-payment freight audit engine (FMC 21-08)
+│   │   │   ├── freight_audit.py    # Freight audit engine (contract, free time, 46 CFR Part 541)
 │   │   │   ├── drawback_audit.py   # 19 U.S.C. § 1313 drawback engine
 │   │   │   ├── ai_classifier.py    # Structured outputs classifier
 │   │   │   └── fixture_generator.py# ReportLab 2-page synthetic archival PDF generator
 │   │   └── data/
 │   │       ├── nightmares/         # Ground-truth 2-page PDF fixtures with synthetic entities
 │   │       └── yente_ofac_ftm.jsonl# Persistent FollowTheMoney v3 sanctions dataset (38 records)
-│   ├── tests/                   # 200 automated tests across 15 modules (unit, Hypothesis fuzzing, 4-tier E2E)
+│   ├── tests/                   # 260 automated tests (unit, Hypothesis properties, E2E, unseen-document corpus)
 │   ├── benchmark.py             # Concurrency benchmarking suite
 │   ├── demo.py                  # CLI multi-statute evaluation tool
 │   └── main.py
@@ -182,7 +184,7 @@ trade-systems-studio/
 ## ⚡ Automated Verification
 
 ```bash
-# 1. Verify Backend Engine (Lint, Strict Types, and all 200 unit/fuzzing/E2E tests)
+# 1. Verify Backend Engine (Lint, Strict Types, and all 260 unit, property, E2E and unseen-document tests)
 cd backend-engine
 ruff check app tests
 mypy app

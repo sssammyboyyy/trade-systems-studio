@@ -184,10 +184,10 @@ export const ExecutiveDossierModal: React.FC<ExecutiveDossierModalProps> = ({
           </h4>
           <ol className="list-decimal list-inside text-xs text-slate-700 space-y-1 leading-relaxed">
             <li>
-              <strong>Immediate Payment Interception:</strong> Withhold carrier remittance pending corrected revised freight bill under FMC Docket 21-08 rules.
+              <strong>Immediate Payment Interception:</strong> Dispute the unsupported lines with the carrier within the period on the invoice (46 CFR 541.8) before paying them.
             </li>
             <li>
-              <strong>Prior Disclosure Safe Harbor:</strong> Execute voluntary prior disclosure under 19 CFR § 162.74 to cap statutory exposure under 19 U.S.C. § 1592 to lawful interest only.
+              <strong>Prior Disclosure:</strong> A valid prior disclosure under 19 CFR § 162.74 limits a negligence or gross-negligence penalty to interest on the loss of duty (fraud: up to 100% of the loss); the loss itself must be tendered.
             </li>
             <li>
               <strong>Automated Gateway Deployment:</strong> Install Samuel&apos;s deterministic pre-payment audit engine to inspect all inbound 7501 summaries and carrier EDI 210 invoices.

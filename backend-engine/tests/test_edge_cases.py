@@ -129,8 +129,8 @@ def test_duty_drawback_untimely_5yr_window():
     metrics, discrepancies = audit_duty_drawback(expired_drawback)
     assert metrics.drawback_unclaimed_unlocked == Decimal("0.00")
     assert len(discrepancies) == 1
-    assert "5-Year Statutory Limit Exceeded" in discrepancies[0].title
-    assert discrepancies[0].statutory_code == "19 U.S.C. § 1313(r)"
+    assert "5-Year Limit" in discrepancies[0].title
+    assert discrepancies[0].statutory_code == "19 U.S.C. 1313(r)(1)"
 
 
 def test_freight_missing_free_days_no_fabrication():
@@ -150,7 +150,8 @@ def test_drawback_missing_entry_no_fabrication():
     partial_drawback = {"duties_paid": "1000.00"}
     metrics, discrepancies = audit_duty_drawback(partial_drawback)
     assert metrics.drawback_unclaimed_unlocked == Decimal("0.00")
-    assert len(discrepancies) == 0
+    assert all(d.exposure_amount == Decimal("0.00") for d in discrepancies)
+    assert [d.id for d in discrepancies] == ["disc-c3-insufficient"]
 
 
 def test_drawback_missing_export_bl_no_fabrication():
@@ -161,7 +162,7 @@ def test_drawback_missing_export_bl_no_fabrication():
     }
     metrics, discrepancies = audit_duty_drawback(partial_drawback)
     assert metrics.drawback_unclaimed_unlocked == Decimal("0.00")
-    assert len(discrepancies) == 0
+    assert all(d.exposure_amount == Decimal("0.00") for d in discrepancies)
 
 
 def test_freight_explicit_values_still_work():

@@ -143,7 +143,7 @@ def run_fullstack_e2e() -> int:
                     [pdf_bytes, f"http://127.0.0.1:{BACKEND_PORT}"],
                 )
                 assert upload_status["status"] == 200, f"Upload failed: {upload_status}"
-                assert upload_status["exposure"] == "125000.00", f"Unexpected upload exposure: {upload_status}"
+                assert upload_status["exposure"] == "62500.00", f"Unexpected upload exposure: {upload_status}"
                 print(f"[PASS] Live POST /api/v1/audit/upload returned {upload_status}")
 
             assert not errors, "Full-stack runtime errors detected:\n" + "\n".join(errors)

@@ -1,20 +1,10 @@
 "use client";
 
+import { AGGREGATE_METRICS } from "@/data/mockData";
+import { formatUsd } from "@/lib/money";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Play,
-  Pause,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Film,
-  CheckCircle2,
-  ExternalLink,
-  ShieldAlert,
-} from "lucide-react";
+import { X, Play, Pause, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { sound } from "@/lib/audio";
 import { resolveAssetPath } from "@/lib/assets";
 
@@ -64,17 +54,17 @@ const FILM_SCENES: FilmScene[] = [
     imageSrc: "/film/frame-02-at-13s.png",
     chapterBadge: "CUSTOMS DEFENSE",
     conceptNumber: "02 / 1592 FIREWALL",
-    statutoryAnchor: "$125,000.00 Penalty Avoided",
+    statutoryAnchor: `${formatUsd(AGGREGATE_METRICS.penalty_exposure_avoided)} penalty exposure flagged`,
   },
   {
     id: "scene-04",
     title: "Pre-Payment Freight Audit",
-    subtitle: "FMC Docket No. 21-08 Interceptor: Chassis Splits & Demurrage in Free Time",
+    subtitle: "Fuel surcharge, chassis split and detention inside free time (46 CFR Part 541)",
     duration: 5,
     imageSrc: "/film/frame-03-at-18.5s.png",
     chapterBadge: "FREIGHT INTERCEPT",
     conceptNumber: "03 / CARRIER OVERBILLING",
-    statutoryAnchor: "$1,547.50 Cash Withheld",
+    statutoryAnchor: `${formatUsd(AGGREGATE_METRICS.carrier_overbilling_caught)} disputed`,
   },
   {
     id: "scene-05",
@@ -84,7 +74,7 @@ const FILM_SCENES: FilmScene[] = [
     imageSrc: "/film/frame-04-at-23.5s.png",
     chapterBadge: "TREASURY YIELD",
     conceptNumber: "04 / DUTY DRAWBACK",
-    statutoryAnchor: "$27,324.00 Statutory Refund",
+    statutoryAnchor: `${formatUsd(AGGREGATE_METRICS.drawback_unclaimed_unlocked)} drawback identified`,
   },
   {
     id: "scene-06",
@@ -207,10 +197,10 @@ export const FilmTheaterModal: React.FC<FilmTheaterModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative w-full max-w-5xl bg-[#0B0F19] border border-slate-700/80 rounded-xl overflow-hidden shadow-2xl flex flex-col"
+          className="relative w-full max-w-5xl bg-canvas-dark border border-slate-700/80 rounded-xl overflow-hidden shadow-2xl flex flex-col"
         >
           {/* Top Bar */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-[#0F172A]/90">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-terminal-slate/90">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-sm bg-cobalt-950 border border-cobalt-800 text-cobalt-400 flex items-center justify-center font-mono font-bold text-xs">
                 🎬
@@ -275,7 +265,7 @@ export const FilmTheaterModal: React.FC<FilmTheaterModalProps> = ({
           </div>
 
           {/* Timeline & Chapter Bar */}
-          <div className="px-5 py-4 bg-[#0F172A] border-t border-slate-800 flex flex-col gap-3">
+          <div className="px-5 py-4 bg-terminal-slate border-t border-slate-800 flex flex-col gap-3">
             {/* Progress Scrubbing Bar */}
             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
               {FILM_SCENES.map((scene, idx) => {

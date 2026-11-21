@@ -15,7 +15,6 @@ import {
   AlertCircle,
   ExternalLink,
   Scan,
-  Crosshair,
   Shield,
 } from "lucide-react";
 
@@ -58,26 +57,32 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
   // Base canvas dimensions in pixels (matches 612 x 792 letter aspect ratio)
   const baseWidth = 612;
 
-  // Determine source URL with fallback logic (favor same-origin static fixture for instant load)
-  const [resolvedUrl, setResolvedUrl] = useState<string>(() => {
-    if (documentUrl && documentUrl.startsWith("blob:")) return documentUrl;
-    return resolveAssetPath(`/nightmares/${filename}`);
-  });
+  // Uploads arrive as blob: URLs; bundled fixtures are served from /public/nightmares
+  // (byte-identical to the backend copies, so their SHA-256 matches the provenance bar).
+  const pickUrl = (): string => {
+    if (documentUrl && /^(blob:|https?:)/.test(documentUrl)) return documentUrl;
+    if (documentUrl && documentUrl.startsWith("/nightmares/")) return resolveAssetPath(documentUrl);
+    if (documentUrl && documentUrl.startsWith("/api/v1/documents/")) return resolveAssetPath(`/nightmares/${filename}`);
+    return "";
+  };
+  const [resolvedUrl, setResolvedUrl] = useState<string>(pickUrl);
 
   useEffect(() => {
     setIsLoading(true);
     setHasError(false);
     setCurrentPage(1);
-    if (documentUrl && documentUrl.startsWith("blob:")) {
-      setResolvedUrl(documentUrl);
-    } else {
-      setResolvedUrl(resolveAssetPath(`/nightmares/${filename}`));
+    const next = pickUrl();
+    setResolvedUrl(next);
+    if (!next) {
+      setIsLoading(false);
+      setHasError(true);
     }
-    
-    // Trigger cybernetic scanner sweep on document change
+    // Scanner sweep on document change
     setIsScanning(true);
     const scanTimer = setTimeout(() => setIsScanning(false), 2000);
     return () => clearTimeout(scanTimer);
+    // pickUrl only reads filename and documentUrl, which are the dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filename, documentUrl]);
 
   const triggerManualScan = () => {
@@ -148,14 +153,9 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
   };
 
   const onDocumentLoadError = (err: Error) => {
-    console.warn("Primary PDF load notice, checking alternative stream:", err);
-    if (documentUrl && documentUrl.startsWith("/api/")) {
-      const apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      setResolvedUrl(`${apiBase}${documentUrl}`);
-    } else {
-      setIsLoading(false);
-      setHasError(true);
-    }
+    console.warn("PDF could not be loaded:", err);
+    setIsLoading(false);
+    setHasError(true);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -225,7 +225,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
             className={`flex items-center gap-1 px-2 py-1 rounded-sm font-mono text-[10px] uppercase font-bold transition-all border shadow-xs ${
               piiRedacted
                 ? "bg-amber-500/20 text-amber-300 border-amber-500/60"
-                : "bg-slate-100 dark:bg-[#1E293B] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-[#1F2937]"
+                : "bg-slate-100 dark:bg-terminal-elevated hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-terminal-subtle"
             }`}
           >
             <Shield className="w-3 h-3 text-amber-400" />
@@ -246,7 +246,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
             onClick={handleZoomOut}
             aria-label="Zoom Out"
             title="Zoom Out"
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors border border-slate-300 dark:border-[#1F2937] rounded-sm"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-terminal-elevated text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors border border-slate-300 dark:border-terminal-subtle rounded-sm"
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -257,7 +257,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
             onClick={handleZoomIn}
             aria-label="Zoom In"
             title="Zoom In"
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors border border-slate-300 dark:border-[#1F2937] rounded-sm"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-terminal-elevated text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors border border-slate-300 dark:border-terminal-subtle rounded-sm"
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
@@ -265,7 +265,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
             onClick={handleResetZoom}
             aria-label="Fit Scale"
             title="Fit Scale"
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors border border-slate-300 dark:border-[#1F2937] rounded-sm"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-terminal-elevated text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors border border-slate-300 dark:border-terminal-subtle rounded-sm"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -273,7 +273,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
       </div>
 
       {/* Interactive Document Lens Guidance Strip */}
-      <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 bg-[#0B0F19] border-b border-[#1F2937] text-[11px] font-mono shrink-0">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 bg-canvas-dark border-b border-terminal-subtle text-[11px] font-mono shrink-0">
         <div className="flex items-center gap-1.5 text-slate-300">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="font-semibold text-slate-200">Interactive Document Lens:</span>
@@ -292,7 +292,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
       {/* Viewport Scroll Canvas */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto p-3 sm:p-6 flex justify-center items-start rectilinear-grid relative bg-slate-200/50 dark:bg-[#0B0F19]"
+        className="flex-1 overflow-auto p-3 sm:p-6 flex justify-center items-start rectilinear-grid relative bg-slate-200/50 dark:bg-canvas-dark"
       >
         {isLoading && (
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-300 dark:bg-slate-800 overflow-hidden z-40">
@@ -301,7 +301,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
         )}
 
         {hasError ? (
-          <div className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-[#0F172A] border border-red-400 dark:border-red-900/40 max-w-md text-center my-auto rounded-sm shadow-sm">
+          <div className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-terminal-slate border border-red-400 dark:border-red-900/40 max-w-md text-center my-auto rounded-sm shadow-sm">
             <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
             <h4 className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100 mb-1">
               Document Stream Notice
@@ -448,8 +448,8 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
                       isAnalyzing
                         ? "ring-4 ring-cyan-400 bg-cyan-500/30 shadow-[0_0_28px_rgba(56,189,248,0.5)] z-40 scale-[1.03]"
                         : isSelected
-                        ? "ring-2 ring-cobalt-500 dark:ring-cobalt-400 z-30 scale-[1.018] shadow-[0_0_20px_rgba(59,130,246,0.35)]"
-                        : "z-20 hover:scale-[1.008] hover:shadow-md"
+                        ? "ring-2 ring-cobalt-500 dark:ring-cobalt-400 z-30"
+                        : "z-20 hover:shadow-md"
                     }`}
                   >
                     {/* Precision Mechanical Reticle Corners */}
@@ -460,7 +460,7 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
 
                     {/* Auto-Pulse Radar Beacon for First-Time Visitor Guidance */}
                     {index === 0 && !beaconDismissed && (
-                      <div className="absolute -top-7 -right-2 z-40 pointer-events-none flex items-center gap-1.5">
+                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-9 z-40 pointer-events-none flex items-center gap-1.5">
                         <span className="relative flex h-3 w-3">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500 shadow-sm shadow-cyan-500/50"></span>
@@ -478,29 +478,25 @@ export const PdfOverlayCanvas: React.FC<PdfOverlayCanvasProps> = ({
                       </div>
                     )}
 
-                    {/* Pin Badge on top left of bounding box (canvas-relative zoom scaling) */}
-                    <div
-                      style={{
-                        transform: "translateY(-100%)",
-                        fontSize: overlayBadgeFontSize,
-                        lineHeight: 1.25,
-                      }}
-                      className={`absolute left-0 top-0 font-mono font-medium tabular-nums px-1.5 py-0.5 whitespace-nowrap flex items-center gap-1 ${badgeBg} shadow-sm rounded-xs`}
+                    {/* Numbered pin in the page margin: never covers document text */}
+                    <span
+                      aria-hidden
+                      style={{ fontSize: overlaySubFontSize }}
+                      className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+6px)] flex h-[1.9em] w-[1.9em] items-center justify-center rounded-full font-mono font-bold tabular-nums shadow-sm ${badgeBg}`}
                     >
-                      {isUncertain && <AlertTriangle className="w-2.5 h-2.5" />}
-                      <span>{disc.statutory_code}</span>
-                      <span>•</span>
-                      <span>{(disc.confidence * 100).toFixed(0)}%</span>
-                    </div>
+                      {index + 1}
+                    </span>
 
-                    {/* Biometric Target Locked Indicator when active */}
+                    {/* Full citation only for the selected finding, placed below the row */}
                     {isSelected && (
                       <div
-                        style={{ fontSize: overlaySubFontSize }}
-                        className="absolute -bottom-5 right-0 bg-cobalt-950 text-cobalt-400 border border-cobalt-500 font-mono font-medium px-1 py-0.5 rounded-xs tracking-wider flex items-center gap-1 shadow-md"
+                        style={{ fontSize: overlayBadgeFontSize, lineHeight: 1.25 }}
+                        className={`absolute left-0 top-full mt-1 z-40 flex items-center gap-1 whitespace-nowrap rounded-xs px-1.5 py-0.5 font-mono font-medium tabular-nums shadow-md ${badgeBg}`}
                       >
-                        <Crosshair className="w-2.5 h-2.5 animate-spin" />
-                        <span>TARGET LOCKED</span>
+                        {isUncertain && <AlertTriangle className="w-2.5 h-2.5" />}
+                        <span>{disc.statutory_code}</span>
+                        <span>·</span>
+                        <span>{(disc.confidence * 100).toFixed(0)}%</span>
                       </div>
                     )}
                   </div>

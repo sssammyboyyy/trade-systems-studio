@@ -27,33 +27,20 @@ import { WorkbenchFooter } from "./WorkbenchFooter";
 import { WorkspaceTabBar } from "./WorkspaceTabBar";
 import { sound } from "@/lib/audio";
 import { recordTelemetry } from "@/lib/supabase";
-import { resolveAssetPath } from "@/lib/assets";
-import { INITIAL_CUSTOMS_NIGHTMARE_FIXTURE } from "@/data/mockData";
+
+import { INITIAL_CUSTOMS_NIGHTMARE_FIXTURE, AGGREGATE_METRICS } from "@/data/mockData";
+import { DataSourceBanner } from "./DataSourceBanner";
 import { ParadigmSwitcher, ParadigmId } from "./ParadigmSwitcher";
 import { Var2TriageQueue } from "./variations/Var2TriageQueue";
 import { FirewallProvider, usePreIngestFirewall, playPseudoHaptic } from "@/lib/firewall-core";
-import {
-  Scale,
-  DollarSign,
-  FileCheck2,
-  Shield,
-  FileText,
-  Network,
-  Upload,
-  Binary,
-  Landmark,
-  Columns2,
-  Maximize2,
-  LayoutList,
-  Download,
-} from "lucide-react";
+import { Scale, DollarSign, FileCheck2, Network, Binary, Landmark } from "lucide-react";
 
 const PdfOverlayCanvas = dynamic(
   () => import("./PdfOverlayCanvas").then((mod) => mod.PdfOverlayCanvas),
   {
     ssr: false,
     loading: () => (
-      <div className="flex flex-col items-center justify-center h-full bg-[#0B0F19] border border-[#1F2937] text-slate-400 font-mono text-xs gap-3">
+      <div className="flex flex-col items-center justify-center h-full bg-canvas-dark border border-terminal-subtle text-slate-400 font-mono text-xs gap-3">
         <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent animate-spin rounded-full" />
         <span>Initializing High-Precision Document Lens...</span>
       </div>
@@ -74,7 +61,7 @@ const ALL_PILLARS = [
     name: "02 / Pre-Payment Freight Overbilling",
     shortTag: "FREIGHT AUDIT",
     icon: <DollarSign className="w-3.5 h-3.5" />,
-    statute: "FMC Docket 21-08 & OSRA 2022",
+    statute: "46 CFR 545.5 & 46 CFR Part 541",
   },
   {
     id: "concept_3_drawback",
@@ -107,7 +94,8 @@ const ALL_PILLARS = [
 ];
 
 const DualPaneAuditViewerInner: React.FC = () => {
-  const { exportAuditPacket } = usePreIngestFirewall();
+  const { exportAuditPacket, adoptAudit } = usePreIngestFirewall();
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [activeParadigm, setActiveParadigm] = useState<ParadigmId>("var-1");
   const [activeConceptId, setActiveConceptId] = useState<string>("concept_1_customs");
   const [auditData, setAuditData] = useState<AuditResult>(INITIAL_CUSTOMS_NIGHTMARE_FIXTURE);
@@ -145,6 +133,7 @@ const DualPaneAuditViewerInner: React.FC = () => {
 
     sound.playLock();
     setIsLoading(true);
+    setUploadError(null);
     try {
       const result = await uploadAndAuditDocument(file);
       setAuditData(result);
@@ -159,11 +148,17 @@ const DualPaneAuditViewerInner: React.FC = () => {
         },
       });
     } catch (err) {
-      console.error("Client PDF audit error:", err);
+      setUploadError(err instanceof Error ? err.message : "The document could not be audited.");
     } finally {
       setIsLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
+  // Decisions and the audit packet always refer to the audit on screen.
+  useEffect(() => {
+    if (auditData) adoptAudit(auditData);
+  }, [auditData, adoptAudit]);
 
   const switchConcept = (conceptId: string) => {
     sound.playLock();
@@ -301,14 +296,17 @@ const DualPaneAuditViewerInner: React.FC = () => {
     }
     setIsLoading(true);
 
-    Promise.all([fetchAudit(activeConceptId), fetchAggregateMetrics()]).then(
-      ([auditRes, metricsRes]) => {
+    const isAuditConcept = !["concept_5_hts", "concept_6_valuation"].includes(activeConceptId);
+    Promise.all([isAuditConcept ? fetchAudit(activeConceptId) : Promise.resolve(null), fetchAggregateMetrics()])
+      .then(([auditRes, metricsRes]) => {
         if (!isMounted) return;
-        setAuditData(auditRes);
+        if (auditRes) setAuditData(auditRes);
         setAggregateMetrics(metricsRes);
-        setIsLoading(false);
-      }
-    );
+      })
+      .catch((err) => console.warn("Audit load failed:", err))
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
 
     recordTelemetry({
       event_type: "concept_switch",
@@ -353,10 +351,15 @@ const DualPaneAuditViewerInner: React.FC = () => {
     setIsMobileNavOpen(false);
   };
 
-  // Kill-shot metrics read straight off the engine payload: no synthetic inflation
-  const displayedExposureAvoided = aggregateMetrics?.penalty_exposure_avoided || 125000;
-  const displayedCarrierOverbilling = aggregateMetrics?.carrier_overbilling_caught || 1547.5;
-  const displayedDrawback = aggregateMetrics?.drawback_unclaimed_unlocked || 27324;
+  // Headline metrics come straight from the engines (snapshot or live), never from literals
+  const displayedExposureAvoided = aggregateMetrics?.penalty_exposure_avoided ?? AGGREGATE_METRICS.penalty_exposure_avoided;
+  const displayedCarrierOverbilling = aggregateMetrics?.carrier_overbilling_caught ?? AGGREGATE_METRICS.carrier_overbilling_caught;
+  const displayedDrawback = aggregateMetrics?.drawback_unclaimed_unlocked ?? AGGREGATE_METRICS.drawback_unclaimed_unlocked;
+
+  const ladderFinding =
+    auditData?.discrepancies.find((d) => d.id === "disc-c1-03") ??
+    INITIAL_CUSTOMS_NIGHTMARE_FIXTURE.discrepancies.find((d) => d.id === "disc-c1-03") ??
+    null;
 
   const activeDiscrepancy =
     auditData?.discrepancies.find((d) => d.id === activeDiscrepancyId) ||
@@ -395,12 +398,12 @@ const DualPaneAuditViewerInner: React.FC = () => {
       <SystemsHeroSection persona={persona} onChangePersona={setPersona} />
 
       {/* 3. DUAL-PANE AUDIT WORKBENCH (ACT 1 CONTINUED) */}
-      <section id="workbench" className="max-w-7xl w-full max-w-full overflow-hidden mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <section id="workbench" aria-busy={isLoading} className="max-w-7xl w-full max-w-full overflow-hidden mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Lighthouse heading-order: first in-section heading after the h1 */}
         <h2 className="sr-only">Audit Workbench</h2>
         {/* Scenario Bar: Durban, Long Beach, Steel Drawback */}
         <ScenarioSelectorBar
-          activeScenarioId={CORRIDOR_SCENARIOS.find((s) => s.concept_id === activeConceptId)?.id || "scenario_durban_rotterdam"}
+          activeScenarioId={CORRIDOR_SCENARIOS.find((s) => s.concept_id === activeConceptId)?.id || ""}
           onSelectScenario={(sc: Scenario) => switchConcept(sc.concept_id)}
         />
 
@@ -430,6 +433,8 @@ const DualPaneAuditViewerInner: React.FC = () => {
           onChange={handleCustomFileUpload}
         />
 
+        <DataSourceBanner uploadError={uploadError} onDismissUploadError={() => setUploadError(null)} />
+
         {/* Provenance Metadata Bar: document lineage emitted by the engine */}
         <ProvenanceMetadataBar audit={auditData} />
 
@@ -437,22 +442,22 @@ const DualPaneAuditViewerInner: React.FC = () => {
         {activeConceptId === "concept_4_sanctions" ? (
           <SanctionsGraphViewer onOpenLeadModal={() => setIsModalOpen(true)} />
         ) : activeConceptId === "concept_5_hts" ? (
-          <div className="h-[750px] border border-[#1F2937] rounded-xl overflow-hidden flex flex-col shadow-2xl">
+          <div className="h-[750px] border border-terminal-subtle rounded-xl overflow-hidden flex flex-col shadow-2xl">
             <HtsClassifierViewer onLeadTrigger={() => setIsModalOpen(true)} />
           </div>
         ) : activeConceptId === "concept_6_valuation" ? (
-          <div className="h-[750px] border border-[#1F2937] rounded-xl overflow-hidden flex flex-col shadow-2xl">
+          <div className="h-[750px] border border-terminal-subtle rounded-xl overflow-hidden flex flex-col shadow-2xl">
             <CustomsValuationViewer onLeadTrigger={() => setIsModalOpen(true)} />
           </div>
         ) : (
           <div
             ref={workbenchContainerRef}
             id="workbench-viewport"
-            className="h-[750px] flex flex-col lg:flex-row border border-[#1F2937] rounded-xl overflow-hidden bg-[#0B0F19] shadow-2xl"
+            className="h-[750px] flex flex-col lg:flex-row border border-terminal-subtle rounded-xl overflow-hidden bg-canvas-dark shadow-2xl"
           >
             {/* LEFT PANE: Canvas PDF Viewer */}
             <div
-              className={`h-full border-b lg:border-b-0 lg:border-r border-[#1F2937] flex-col overflow-hidden transition-all duration-200 ${
+              className={`h-full border-b lg:border-b-0 lg:border-r border-terminal-subtle flex-col overflow-hidden transition-all duration-200 ${
                 mobileTab === "doc" ? "flex w-full" : "hidden lg:flex"
               } ${
                 desktopViewMode === "doc_focus"
@@ -493,31 +498,27 @@ const DualPaneAuditViewerInner: React.FC = () => {
       </section>
 
       {/* 4. ACT 2: INLINE 5-STAGE ARCHITECTURE PIPELINE */}
-      <section id="architecture" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-[#1F2937]">
+      <section id="architecture" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-terminal-subtle">
         <InlineArchitectureFlow />
       </section>
 
       {/* 5. STATUTORY CULPABILITY & PENALTY LADDER (19 U.S.C. § 1592) */}
-      <section id="penalty-ladder" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-[#1F2937]">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 font-mono text-xs text-blue-400 font-semibold uppercase tracking-wider">
-            <Scale className="w-4 h-4 text-blue-400" />
-            <span>Statutory Culpability & Prior Disclosure Modeling Engine</span>
+      <section id="penalty-ladder" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-terminal-subtle">
+        <div className="mb-2 max-w-3xl">
+          <div className="flex items-center gap-2 font-mono text-xs text-ink-cobalt font-semibold uppercase tracking-wider">
+            <Scale className="w-4 h-4" aria-hidden />
+            <span>Culpability and prior disclosure</span>
           </div>
-          <p className="text-xs font-mono text-slate-400 mt-1">
-            Independent statutory exposure calculator for Customs Counsel. Models maximum civil penalty exposure across 19 U.S.C. § 1592 culpability tiers and computes prior disclosure mitigation per 19 CFR § 162.74.
+          <p className="type-body-dense text-ink-muted mt-1">
+            The same loss of duty carries very different statutory maximums depending on culpability. Figures come from the
+            engine&apos;s classification finding on {ladderFinding === auditData?.discrepancies.find((d) => d.id === "disc-c1-03") ? "the document on screen" : "the sample customs invoice"}.
           </p>
         </div>
-        <div className="bg-[#0F172A] border border-[#1F2937] rounded-xl p-5 shadow-2xl">
-          <PenaltyExposureLadder
-            dutyLossUsd={6000}
-            domesticValueUsd={125000}
-          />
-        </div>
+        <PenaltyExposureLadder finding={ladderFinding} />
       </section>
 
       {/* 6. ACT 4: PRINCIPAL ARCHITECT'S THESIS SIGNED BY SAMUEL */}
-      <section id="architect-thesis" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-[#1F2937]">
+      <section id="architect-thesis" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-terminal-subtle">
         <ArchitectThesis onOpenReview={openReview} />
       </section>
           </>

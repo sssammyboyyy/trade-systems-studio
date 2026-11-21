@@ -1,22 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ShieldAlert,
-  ShieldCheck,
-  AlertTriangle,
-  Search,
-  Network,
-  ExternalLink,
-  Info,
-  Scale,
-  Building2,
-  UserCheck,
-  Layers,
-  ArrowRight,
-} from "lucide-react";
-import { GraphNode, GraphEdge, CorporateGraphResponse } from "@/lib/types";
+
+import { ShieldAlert, ShieldCheck, Search, Network, ArrowRight } from "lucide-react";
+import { GraphNode, CorporateGraphResponse } from "@/lib/types";
 import { fetchSanctionsGraph } from "@/lib/api";
 import { sound } from "@/lib/audio";
 
@@ -202,9 +189,9 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
   });
 
   return (
-    <div className="flex flex-col bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#1F2937] rounded-sm shadow-xs overflow-hidden">
+    <div className="flex flex-col bg-white dark:bg-terminal-slate border border-slate-200 dark:border-terminal-subtle rounded-sm shadow-xs overflow-hidden">
       {/* 1. Header & Controls */}
-      <div className="p-4 bg-slate-50 dark:bg-[#0F172A] border-b border-slate-200 dark:border-[#1F2937] flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 bg-slate-50 dark:bg-terminal-slate border-b border-slate-200 dark:border-terminal-subtle flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
@@ -228,7 +215,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
             placeholder="Type query to test fuzzy matching..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-9 pr-16 py-1.5 bg-white dark:bg-[#0B0F19] border border-slate-300 dark:border-slate-700 rounded-sm font-mono text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-500"
+            className="w-full pl-9 pr-16 py-1.5 bg-white dark:bg-canvas-dark border border-slate-300 dark:border-slate-700 rounded-sm font-mono text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-500"
           />
           {searchScore !== null && (
             <span
@@ -245,7 +232,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
       </div>
 
       {/* 2. Preset Entity Switcher Tabs */}
-      <div className="flex items-center gap-2 p-3 bg-slate-100/70 dark:bg-[#0F172A] border-b border-slate-200 dark:border-[#1F2937] overflow-x-auto">
+      <div className="flex items-center gap-2 p-3 bg-slate-100/70 dark:bg-terminal-slate border-b border-slate-200 dark:border-terminal-subtle overflow-x-auto">
         <span className="font-mono text-[11px] text-slate-400 uppercase font-semibold mr-1 shrink-0">
           Target Entities:
         </span>
@@ -257,8 +244,8 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
               onClick={() => handleSelectPreset(preset.id)}
               className={`px-3 py-1.5 rounded-sm font-mono text-xs flex items-center gap-2 transition-all shrink-0 ${
                 isSelected
-                  ? "bg-slate-900 dark:bg-[#1E293B] text-canvas-stone border border-slate-700 shadow-xs"
-                  : "bg-white dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#1F2937] hover:border-slate-400"
+                  ? "bg-slate-900 dark:bg-terminal-elevated text-canvas-stone border border-slate-700 shadow-xs"
+                  : "bg-white dark:bg-terminal-slate text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-terminal-subtle hover:border-slate-400"
               }`}
             >
               <span className="font-semibold">{preset.name}</span>
@@ -279,7 +266,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
       {/* 3. Main Dual-Pane: Left Interactive SVG Network Graph, Right Node Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-3 min-h-[460px]">
         {/* Left: SVG Network Graph */}
-        <div className="lg:col-span-2 relative bg-slate-50/50 dark:bg-[#0B0F19] border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-[#1F2937] flex items-center justify-center p-4">
+        <div className="lg:col-span-2 relative bg-slate-50/50 dark:bg-canvas-dark border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-terminal-subtle flex items-center justify-center p-4">
           <svg
             viewBox={`0 0 ${canvasW} ${canvasH}`}
             className="w-full h-full max-h-[460px] select-none"
@@ -296,7 +283,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
                   d="M 32 0 L 0 0 0 32"
                   fill="none"
                   stroke="currentColor"
-                  className="text-slate-200 dark:text-[#181C24]"
+                  className="text-slate-200 dark:text-terminal-slate"
                   strokeWidth="1"
                 />
               </pattern>
@@ -508,9 +495,9 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
         </div>
 
         {/* Right: Entity Inspector Panel */}
-        <div className="p-5 flex flex-col justify-between bg-white dark:bg-[#0F172A]">
+        <div className="p-5 flex flex-col justify-between bg-white dark:bg-terminal-slate">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#1F2937]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-terminal-subtle">
               <span className="font-mono text-[11px] font-bold text-slate-400 uppercase">
                 ENTITY DOSSIER INSPECTOR
               </span>
@@ -554,7 +541,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
                     (prog, idx) => (
                       <div
                         key={idx}
-                        className="text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#0F172A] p-1.5 rounded-xs border border-slate-200 dark:border-slate-800"
+                        className="text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-terminal-slate p-1.5 rounded-xs border border-slate-200 dark:border-slate-800"
                       >
                         • {prog}
                       </div>
@@ -570,7 +557,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
 
             {/* Notes */}
             {((hoveredNode && hoveredNode.notes) || targetNode.notes) && (
-              <div className="mt-4 p-2.5 bg-slate-50 dark:bg-[#0F172A] rounded-xs border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <div className="mt-4 p-2.5 bg-slate-50 dark:bg-terminal-slate rounded-xs border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   Intel Note:{" "}
                 </span>
@@ -583,7 +570,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
           {onOpenLeadModal && (
             <button
               onClick={onOpenLeadModal}
-              className="mt-6 w-full py-2 px-3 bg-slate-900 dark:bg-[#1E293B] hover:bg-slate-800 dark:hover:bg-[#1E293B] text-canvas-stone font-mono text-xs font-bold rounded-sm border border-slate-700 flex items-center justify-center gap-2 transition-colors"
+              className="mt-6 w-full py-2 px-3 bg-slate-900 dark:bg-terminal-elevated hover:bg-slate-800 dark:hover:bg-terminal-elevated text-canvas-stone font-mono text-xs font-bold rounded-sm border border-slate-700 flex items-center justify-center gap-2 transition-colors"
             >
               <span>Screen Your Counterparties ($0)</span>
               <ArrowRight className="w-3.5 h-3.5 text-cobalt-400" />
@@ -593,7 +580,7 @@ export const SanctionsGraphViewer: React.FC<SanctionsGraphViewerProps> = ({
       </div>
 
       {/* 4. Bottom OFAC 50 Percent Rule Statutory Meter */}
-      <div className="p-4 bg-slate-50 dark:bg-[#0F172A] border-t border-slate-200 dark:border-[#1F2937] flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="p-4 bg-slate-50 dark:bg-terminal-slate border-t border-slate-200 dark:border-terminal-subtle flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="w-full md:w-auto">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100">

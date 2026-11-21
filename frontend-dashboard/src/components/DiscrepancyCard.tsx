@@ -3,23 +3,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Discrepancy } from "@/lib/types";
-import { sound } from "@/lib/audio";
+
 import { formatUsd, gtZero } from "@/lib/money";
 import { TabularAmount } from "./TabularAmount";
-import {
-  AlertOctagon,
-  AlertTriangle,
-  ShieldCheck,
-  HelpCircle,
-  ArrowUpRight,
-  Shield,
-  ChevronDown,
-  ChevronUp,
-  Scale,
-  Zap,
-  Eye,
-  Crosshair,
-} from "lucide-react";
+import { AlertOctagon, AlertTriangle, ShieldCheck, ArrowUpRight, ChevronDown, ChevronUp, Scale, Crosshair } from "lucide-react";
 
 interface DiscrepancyCardProps {
   discrepancy: Discrepancy;
@@ -107,10 +94,10 @@ export const DiscrepancyCard: React.FC<DiscrepancyCardProps> = ({
         onClick={() => onClick(discrepancy.id)}
         className={`relative p-4 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.985] cursor-pointer border rounded-lg overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           isActive
-            ? "bg-[#1E293B] border-blue-500 ring-1 ring-blue-500 shadow-xl shadow-blue-500/10"
+            ? "bg-terminal-elevated border-blue-500 ring-1 ring-blue-500 shadow-xl shadow-blue-500/10"
             : isUncertain
-            ? "bg-[#0F172A] border-dashed border-amber-500/70 hover:border-amber-400"
-            : `bg-[#0F172A] border-[#1F2937] ${style.highlightBg}`
+            ? "bg-terminal-slate border-dashed border-amber-500/70 hover:border-amber-400"
+            : `bg-terminal-slate border-terminal-subtle ${style.highlightBg}`
         }`}
       >
         {/* iPhone Duo 3D Crease Shadow Overlay */}

@@ -26,8 +26,8 @@ class GRIReasoningResult(BaseModel):
 class TradeAIClassifier:
     """
     AI Classification & Routing using google-genai + instructor Python SDK:
-    - gemini-3.8-flash for complex GRI 1-6 reasoning, HS code cross-validation, and legal discrepancy justification.
-    - gemini-3.5-flash-lite for high-throughput field extraction and document routing.
+    - the classifier model (GEMINI_CLASSIFIER_MODEL, default gemini-2.5-flash) for complex GRI 1-6 reasoning, HS code cross-validation, and legal discrepancy justification.
+    - the router model (GEMINI_ROUTER_MODEL, default gemini-2.5-flash-lite) for high-throughput field extraction and document routing.
     - Strict mathematical determinism: Never uses LLM for arithmetic or currency calculations.
     - Gracefully degrades to local deterministic fallback when no API key is present or on API failure.
     """

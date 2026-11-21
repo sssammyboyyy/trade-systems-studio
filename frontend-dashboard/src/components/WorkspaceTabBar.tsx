@@ -28,7 +28,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   setDesktopViewMode,
 }) => {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 pb-2 border-b border-[#1F2937] font-mono text-xs">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 pb-2 border-b border-terminal-subtle font-mono text-xs">
       <div className="flex items-center gap-2 overflow-x-auto max-w-full" role="tablist" aria-label="Compliance workbench pillars">
         <span className="text-[10px] text-slate-400 uppercase font-bold shrink-0">
           Workspace:

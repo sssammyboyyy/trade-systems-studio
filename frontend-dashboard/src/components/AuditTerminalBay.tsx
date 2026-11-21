@@ -39,15 +39,12 @@ export const AuditTerminalBay: React.FC<AuditTerminalBayProps> = ({
   setMobileTab,
   desktopViewMode,
 }) => {
-  const safePdfPath =
-    auditData?.document_url ||
-    (auditData?.document_filename
-      ? `/nightmares/${auditData.document_filename}`
-      : "/nightmares/nightmare_01_customs_ci.pdf");
+  // Never substitute a fixture for a document that has no URL (e.g. an upload).
+  const safePdfPath = auditData?.document_url || "";
 
   return (
     <div
-      className={`h-full flex-col bg-[#0F172A] overflow-hidden transition-all duration-200 ${
+      className={`h-full flex-col bg-terminal-slate overflow-hidden transition-all duration-200 ${
         mobileTab === "findings" ? "flex w-full" : "hidden lg:flex"
       } ${
         desktopViewMode === "report_focus"
@@ -58,8 +55,8 @@ export const AuditTerminalBay: React.FC<AuditTerminalBayProps> = ({
       }`}
     >
       {/* Terminal Bay Header & Tabs */}
-      <div className="px-4 py-3 bg-[#0B0F19] border-b border-[#1F2937] flex items-center justify-between shrink-0 font-mono text-xs">
-        <div role="tablist" aria-label="Audit inspection panels" className="inline-flex p-0.5 bg-[#0F172A] border border-[#1F2937] rounded-lg">
+      <div className="px-4 py-3 bg-canvas-dark border-b border-terminal-subtle flex items-center justify-between shrink-0 font-mono text-xs">
+        <div role="tablist" aria-label="Audit inspection panels" className="inline-flex p-0.5 bg-terminal-slate border border-terminal-subtle rounded-lg">
           <button
             role="tab"
             aria-selected={rightTerminalTab === "discrepancies"}
@@ -112,15 +109,17 @@ export const AuditTerminalBay: React.FC<AuditTerminalBayProps> = ({
         </div>
 
         {/* PDF Link */}
+        {safePdfPath && (
         <a
           href={resolveAssetPath(safePdfPath)}
           target="_blank"
           rel="noreferrer"
-          className="text-xs font-mono text-slate-400 hover:text-blue-400 flex items-center gap-1 border border-[#1F2937] px-2 py-1 rounded-md transition-colors"
+          className="text-xs font-mono text-slate-400 hover:text-blue-400 flex items-center gap-1 border border-terminal-subtle px-2 py-1 rounded-md transition-colors"
         >
           <span>PDF</span>
           <ExternalLink className="w-3 h-3" />
         </a>
+        )}
       </div>
 
       {/* Sub-Tab 1: Discrepancies Redline */}
@@ -143,7 +142,7 @@ export const AuditTerminalBay: React.FC<AuditTerminalBayProps> = ({
 
           <ProvenanceCockpit discrepancy={activeDiscrepancy} />
 
-          <BilledVsLawfulDiff conceptId={activeConceptId} />
+          <BilledVsLawfulDiff audit={auditData} />
 
           {activeConceptId === "concept_clean_fob" ? (
             <div className="p-4 bg-emerald-950/20 border border-emerald-800/60 rounded-lg font-mono space-y-4">
@@ -164,16 +163,16 @@ export const AuditTerminalBay: React.FC<AuditTerminalBayProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 bg-[#0B0F19] border border-emerald-900/40 rounded-md space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-300 pb-1.5 border-b border-[#1F2937]">
+              <div className="p-3 bg-canvas-dark border border-emerald-900/40 rounded-md space-y-2 text-xs">
+                <div className="flex items-center justify-between text-slate-300 pb-1.5 border-b border-terminal-subtle">
                   <span className="text-slate-400">19 U.S.C. § 1592 Penalty Exposure:</span>
                   <span className="font-bold text-emerald-400">$0.00 (Zero Duty Loss)</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-300 pb-1.5 border-b border-[#1F2937]">
+                <div className="flex items-center justify-between text-slate-300 pb-1.5 border-b border-terminal-subtle">
                   <span className="text-slate-400">Incoterms 2020 Allocation:</span>
                   <span className="font-bold text-emerald-400">FOB Yantian (Non-Dutiable)</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-300 pb-1.5 border-b border-[#1F2937]">
+                <div className="flex items-center justify-between text-slate-300 pb-1.5 border-b border-terminal-subtle">
                   <span className="text-slate-400">Line Extension Math (500 × $45):</span>
                   <span className="font-bold text-emerald-400">$22,500.00 (Verified)</span>
                 </div>
@@ -224,7 +223,7 @@ export const AuditTerminalBay: React.FC<AuditTerminalBayProps> = ({
       {/* Sub-Tab 2: CargoWise eAdaptor XML Viewer */}
       {rightTerminalTab === "cargowise" && (
         <div className="flex-1 overflow-y-auto p-4">
-          <CargoWiseXmlViewer />
+          <CargoWiseXmlViewer conceptId={activeConceptId} />
         </div>
       )}
 

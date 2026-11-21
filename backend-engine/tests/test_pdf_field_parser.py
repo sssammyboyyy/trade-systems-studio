@@ -25,19 +25,25 @@ def test_parse_nightmare_01_customs():
     item1 = payload["items"][0]
     assert item1["line_number"] == 1
     assert item1["hts_code"] == "8542.31.0000"
-    assert item1["quantity"] == 500
+    assert item1["quantity"] == "500"
     assert item1["unit_price"] == "45.00"
     assert item1["total_price"] == "25500.00"
 
     item2 = payload["items"][1]
     assert item2["line_number"] == 2
     assert item2["hts_code"] == "8471.30.0100"
-    assert item2["quantity"] == 1000
+    assert item2["quantity"] == "1000"
     assert item2["unit_price"] == "125.00"
     assert item2["total_price"] == "125000.00"
 
     assert payload["misclassified_value"] == "125000.00"
+    # Rates come from the dated tables for a China-origin invoice dated 12 Apr 2024:
+    # 8471.30 Free with no Section 301 measure; 8542.31 Free + 25% Section 301.
+    assert payload["invoice_date"] == "2024-04-12"
+    assert payload["country_of_origin"] == "CN"
+    assert payload["declared_duty_rate"] == "0.00"
     assert payload["lawful_duty_rate"] == "0.25"
+    assert parsed.missing_fields == []
 
     assert len(parsed.bounding_boxes) > 0
     assert "incoterms" in parsed.bounding_boxes
@@ -55,9 +61,11 @@ def test_parse_clean_01_fob():
     payload = parsed.payload
 
     assert "FOB" in payload["incoterms"]
-    assert payload["insurance_charge"] == "0.00"
-    assert payload["freight_charge"] == "0.00"
-    assert payload["unreported_assists"] == "0.00"
+    # An FOB invoice states no freight or insurance: those fields are absent, not "0.00"
+    assert payload["insurance_charge"] is None
+    assert payload["freight_charge"] is None
+    assert payload["unreported_assists"] == "0.00"  # assists are stated as disclosed
+    assert payload["misclassified_value"] is None
 
 
 def test_parse_nightmare_02_freight():
@@ -73,8 +81,12 @@ def test_parse_nightmare_02_freight():
     assert payload["authorized_fsc_rate"] == "0.24"
     assert payload["chassis_split_fee"] == "285.00"
     assert payload["detention_billed"] == "880.00"
-    assert payload["port_free_days_allowed"] == 4
-    assert payload["actual_days_held"] == 4
+    assert payload["port_free_days_allowed"] == 5
+    assert payload["free_time_basis"] == "calendar"
+    assert payload["discharge_date"] == "2024-03-24"
+    assert payload["outgate_date"] == "2024-03-28"
+    assert payload["invoice_date"] == "2024-04-02"
+    assert payload["dnd_missing_fields"] == []
 
     assert "base_freight" in parsed.bounding_boxes
     assert "chassis_split" in parsed.bounding_boxes
@@ -92,9 +104,12 @@ def test_parse_nightmare_03_drawback():
     assert payload["import_entry"] == "CBP-7501-84920184"
     assert payload["export_bl"] == "BGFU-0941824"
     assert payload["duties_paid"] == "27600.00"
-    assert payload["dutiable_value"] == "240000.00"
-    assert payload["drawback_percentage"] == "0.99"
-    assert payload["is_timely_5yr_window"] is True
+    assert payload["entry_date"] == "2024-01-15"
+    assert payload["export_date"] == "2024-03-10"
+    assert payload["imported_quantity"] == "1000"
+    assert payload["exported_quantity"] == "1000"
+    assert payload["direct_identification"] is True
+    assert "is_timely_5yr_window" not in payload  # computed by the engine, not asserted by the parser
 
 
 def test_parse_nightmare_04_sanctions():
@@ -145,6 +160,7 @@ def test_mutated_pdf_produces_mutated_payload_and_audit():
         c.drawString(90, 490, "Container Detention (Billed Day 5 inside 7-day free time)")
         c.drawString(320, 490, "$0.00")
         c.drawString(420, 490, "$1,500.00")
+        c.drawString(46, 460, "Pier gate log: container out-gated on March 30, 2024 at 10:00.")
 
         c.save()
 
@@ -158,7 +174,9 @@ def test_mutated_pdf_produces_mutated_payload_and_audit():
         assert payload["chassis_split_fee"] == "350.00"
         assert payload["detention_billed"] == "1500.00"
         assert payload["port_free_days_allowed"] == 7
-        assert payload["actual_days_held"] == 5
+        assert payload["outgate_date"] == "2024-03-30"  # 24-30 March = 7 calendar days
+        # The mutated invoice omits B/L, container, invoice date and dispute contact (46 CFR 541.5)
+        assert "invoice date" in payload["dnd_missing_fields"]
 
         # Execute freight audit on the extracted payload
         metrics, discrepancies = audit_freight_bill(payload)
@@ -169,7 +187,7 @@ def test_mutated_pdf_produces_mutated_payload_and_audit():
         # Total overbilling = 500.00 + 350.00 + 1500.00 = 2350.00
         from decimal import Decimal
         assert metrics.carrier_overbilling_caught == Decimal("2350.00")
-        assert len(discrepancies) == 3
+        assert {d.id for d in discrepancies} == {"disc-c2-01", "disc-c2-02", "disc-c2-03", "disc-c2-05-missing-info"}
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import httpx
@@ -453,7 +454,7 @@ class SanctionsScreener:
                                     queue.append(e["target_id"])
 
                     if net_edges:
-                        net_nodes = [entities_map[nid] for nid in visited if nid in entities_map]
+                        net_nodes = [node for nid, node in entities_map.items() if nid in visited]
                         networks[target_id] = {
                             "target": entities_map[target_id],
                             "nodes": net_nodes,
@@ -466,21 +467,29 @@ class SanctionsScreener:
 
         return dict(CORPORATE_OWNERSHIP_NETWORKS)
 
-    def calculate_effective_blocked_ownership(
+    @staticmethod
+    def _dedupe_edges(edges: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        One edge per (owner, asset). The same stake filed twice (e.g. from two registry
+        extracts) must not be counted twice; the larger recorded percentage is kept.
+        """
+        best: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        for e in edges:
+            key = (str(e.get("source_id")), str(e.get("target_id")))
+            pct = Decimal(str(e.get("ownership_pct", 0)))
+            if key not in best or pct > Decimal(str(best[key].get("ownership_pct", 0))):
+                best[key] = e
+        return list(best.values())
+
+    def _blocked_pct(
         self,
         target_id: str,
-        visited: Optional[Set[str]] = None,
-        current_network: Optional[Dict[str, Any]] = None
-    ) -> float:
-        """
-        Recursively calculates aggregate blocked ownership percentage under OFAC 50% Rule.
-        Handles direct and multi-hop indirect equity holdings with cycle prevention.
-        """
-        is_root = visited is None
-        if visited is None:
-            visited = set()
+        visited: Set[str],
+        current_network: Optional[Dict[str, Any]],
+        is_root: bool,
+    ) -> Decimal:
         if target_id in visited:
-            return 0.0
+            return Decimal("0")
         visited.add(target_id)
 
         network = self.networks.get(target_id)
@@ -491,35 +500,45 @@ class SanctionsScreener:
 
         if not network:
             ent = next((e for e in self.entities if e.id == target_id), None)
-            if ent and any("OFAC" in p or "SDN" in p or "sanction" in ent.topics for p in ent.programs):
-                return 100.0
-            return 0.0
+            if ent and (any("OFAC" in p or "SDN" in p for p in ent.programs) or "sanction" in ent.topics):
+                return Decimal("100")
+            return Decimal("0")
 
-        target_info = network.get("target", {})
         nodes = {n["id"]: n for n in network.get("nodes", [])}
-        target_node = nodes.get(target_id) or target_info
-        # For intermediate nodes (not root target being evaluated): if directly blocked, return 100.0
+        target_node = nodes.get(target_id) or network.get("target", {})
+        # An intermediate owner that is itself blocked counts as a 100% blocked person.
         if not is_root and target_node.get("is_blocked"):
-            return 100.0
+            return Decimal("100")
 
-        edges = network.get("edges", [])
+        total = Decimal("0")
+        for edge in self._dedupe_edges(network.get("edges", [])):
+            if edge.get("target_id") != target_id:
+                continue
+            owner_id = str(edge.get("source_id"))
+            pct = Decimal(str(edge.get("ownership_pct", 0)))
+            owner_node = nodes.get(owner_id, {})
+            if owner_node.get("is_blocked"):
+                total += pct
+            elif self._blocked_pct(owner_id, set(visited), network, False) >= Decimal("50"):
+                # Binary propagation: an entity 50%+ owned by blocked persons is itself blocked,
+                # so its whole stake counts (not a multiplied-down share).
+                total += pct
+        return min(total, Decimal("100"))
 
-        total_blocked_pct = 0.0
-        for edge in edges:
-            if edge.get("target_id") == target_id:
-                owner_id = edge.get("source_id")
-                pct = float(edge.get("ownership_pct", 0.0))
-                owner_node = nodes.get(owner_id, {})
-                if owner_node.get("is_blocked"):
-                    total_blocked_pct += pct
-                else:
-                    indirect_pct = self.calculate_effective_blocked_ownership(
-                        owner_id, visited.copy(), current_network=network
-                    )
-                    if indirect_pct >= 50.0:
-                        total_blocked_pct += pct
-
-        return min(round(total_blocked_pct, 2), 100.0)
+    def calculate_effective_blocked_ownership(
+        self,
+        target_id: str,
+        visited: Optional[Set[str]] = None,
+        current_network: Optional[Dict[str, Any]] = None
+    ) -> float:
+        """
+        Aggregate blocked ownership percentage under the OFAC 50 Percent Rule, computed in
+        Decimal with cycle protection and duplicate-edge removal. Returned as a float rounded
+        to 2 places for the API model.
+        """
+        is_root = visited is None
+        pct = self._blocked_pct(target_id, set(visited or ()), current_network, is_root)
+        return float(pct.quantize(Decimal("0.01")))
 
     def match_entity(self, query_name: Optional[str], threshold: float = 85.0) -> EntityMatch:
         """
@@ -603,7 +622,7 @@ class SanctionsScreener:
     ) -> Optional[EntityMatch]:
         """
         Queries live yente instance (/match endpoint) if YENTE_API_URL is configured.
-        Raises exception on failure so caller can fail closed (C5).
+        Raises exception on failure so caller can fail closed.
         """
         if not self.yente_url or not query_name.strip():
             return None
@@ -689,7 +708,7 @@ class SanctionsScreener:
     ) -> ScreeningReport:
         """
         Asynchronously screens trade parties, delegating CPU fuzzy matching to worker thread
-        and checking live yente API if configured. Fails closed on Yente API outages (C5).
+        and checking live yente API if configured. Fails closed on Yente API outages.
         """
         if self.yente_url:
             provider_failed = False
@@ -753,14 +772,14 @@ class SanctionsScreener:
     def get_ownership_graph(self, target_id: str) -> CorporateGraphResponse:
         """
         Traverses corporate ownership graph and evaluates the OFAC 50% Rule.
-        Performs cycle-safe transitive multi-hop traversal and fails closed on unknown entities (C5).
-        Distinguishes BIS Entity List from OFAC property blocking (M5).
+        Performs cycle-safe transitive multi-hop traversal and fails closed on unknown entities.
+        Distinguishes BIS Entity List (export licensing) from OFAC property blocking.
         """
         data = self.networks.get(target_id) or CORPORATE_OWNERSHIP_NETWORKS.get(target_id)
         if not data:
             match = next((e for e in self.entities if e.id == target_id), None)
             if not match:
-                # C5: Fail closed on unknown entity! Never return CLEAR_TRANSACTION.
+                # Fail closed on an unknown entity: never return CLEAR_TRANSACTION.
                 return CorporateGraphResponse(
                     target_id=target_id,
                     nodes=[
@@ -824,11 +843,10 @@ class SanctionsScreener:
             )
 
         nodes = [GraphNode(**n) for n in data["nodes"]]
-        edges = [GraphEdge(**e) for e in data["edges"]]
+        edges = [GraphEdge(**e) for e in self._dedupe_edges(data["edges"])]
         target_info = data["target"]
         node_lookup = {n.id: n for n in nodes}
 
-        # Multi-hop transitive cycle-safe blocked ownership calculation (C5)
         blocked_ownership = self.calculate_effective_blocked_ownership(target_id)
 
         # Gather blocking entities (both direct and indirect owners with >=50% effective blocked interest)

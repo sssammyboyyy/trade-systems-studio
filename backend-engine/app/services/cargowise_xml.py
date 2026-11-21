@@ -1,12 +1,15 @@
 import hashlib
 import xml.etree.ElementTree as ET
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from xml.dom import minidom
 
 from pydantic import BaseModel
 
 from app.core.config import settings
+
+if TYPE_CHECKING:
+    from app.models.schemas import AuditResult
 
 
 class CargoWiseShipmentData(BaseModel):
@@ -23,8 +26,10 @@ class CargoWiseShipmentData(BaseModel):
 
 class CargoWiseExportService:
     """
-    Generates schema-compliant CargoWise One eAdaptor UniversalShipment XML payloads.
-    Adheres strictly to http://www.cargowise.com/Schemas/Universal/2011/11 (version 1.1).
+    Generates CargoWise One UniversalShipment-style XML (namespace
+    http://www.cargowise.com/Schemas/Universal/2011/11, version 1.1).
+    Validated only against the structural-subset XSD kept in this repo, not against
+    WiseTech-published schemas, and not transmitted anywhere (no eAdaptor transport).
     Enforces deterministic Python Decimal arithmetic with zero floating-point drift.
     """
 
@@ -58,7 +63,7 @@ class CargoWiseExportService:
                 }
             ]
 
-        # Corridor jurisdiction check (H2):
+        # Corridor jurisdiction check:
         # 19 U.S.C. § 1592 only applies to US import corridors (destination in US e.g. USLAX).
         # Non-US destinations (e.g. NLRTM Rotterdam in the EU) are subject to EU UCC, not US CBP penalties.
         # Never flag 19_USC_1592_PROTECTED on non-US shipments.
@@ -73,13 +78,13 @@ class CargoWiseExportService:
             version="1.1"
         )
 
-        # Content-addressed CorrelationID (M4)
+        # Content-addressed CorrelationID
         corr_seed = f"{shipment_id}:{declaration_id}:{port_origin_code}:{port_dest_code}:{invoice_amount}"
         correlation_id = f"CW-{hashlib.sha256(corr_seed.encode('utf-8')).hexdigest()[:16].upper()}"
 
         header = ET.SubElement(root, "Header")
-        ET.SubElement(header, "SenderID").text = "TRADESYSTEMS_PREAUDIT"
-        ET.SubElement(header, "RecipientID").text = "CW1_EADAPTOR_PRD"
+        ET.SubElement(header, "SenderID").text = settings.CARGOWISE_SENDER_ID
+        ET.SubElement(header, "RecipientID").text = settings.CARGOWISE_RECIPIENT_ID
         ET.SubElement(header, "CorrelationID").text = correlation_id
 
         body = ET.SubElement(root, "Body")
@@ -166,170 +171,96 @@ class CargoWiseExportService:
         parsed = minidom.parseString(xml_bytes)
         return parsed.toprettyxml(indent="  ", encoding="utf-8").decode("utf-8")
 
-    def generate_diff_payload(self, concept_id: str) -> Dict[str, Any]:
+    def generate_diff_payload(self, audit: "AuditResult") -> Dict[str, Any]:
         """
-        Returns a side-by-side XML diff payload: Raw Unaudited vs. Reconciled Lawful XML.
-        Constructs both XML documents structurally via ElementTree rather than string replaces (M4).
-        Reflects concept-specific characteristics (clean FOB vs customs defects vs freight vs drawback).
+        Side-by-side UniversalShipment XML for one audit: the document as extracted
+        ("raw") versus the document with the audit's corrections applied ("reconciled").
+        Every amount comes from ``audit.extracted_data`` and its findings.
         """
-        clean_cid = str(concept_id).lower().strip()
-        if "clean" in clean_cid or "fob" in clean_cid:
-            # Baseline Clean FOB: zero defects, raw and reconciled match identically
-            line_items = [
-                {
-                    "line_number": 1,
-                    "description": "Industrial Brushless DC Motors 480W",
-                    "hts_code": "8501.31",
-                    "value": Decimal("48000.00"),
-                }
-            ]
-            clean_xml = self.generate_universal_interchange_xml(
-                shipment_id="S-CLEAN-FOB-01",
-                declaration_id="B-CLEAN-FOB-01",
-                port_origin_code="CNSZX",
-                port_origin_name="Shenzhen",
-                port_dest_code="USLAX",
-                port_dest_name="Los Angeles",
-                invoice_number="INV-CLEAN-01",
-                incoterm="FOB",
-                invoice_amount=Decimal("48000.00"),
-                insurance_amount=Decimal("0.00"),
-                line_items=line_items,
-                audit_status="CLEARED_NO_EXCEPTIONS",
-                penalty_status="19_USC_1592_COMPLIANT",
-            )
-            return {
-                "concept_id": concept_id,
-                "status": "READY_FOR_INGESTION",
-                "schema_version": "1.1",
-                "reconciled_lawful_xml": clean_xml,
-                "raw_unaudited_xml": clean_xml,
-                "diff_summary": [],
-            }
-
-        if "freight" in clean_cid:
-            reconciled_items = [
-                {
-                    "line_number": 1,
-                    "description": "Ocean Containerized Freight Surcharge Audit",
-                    "hts_code": "9901.00",
-                    "value": Decimal("4500.00"),
-                }
-            ]
-            raw_xml = self.generate_universal_interchange_xml(
-                shipment_id="S-FREIGHT-OVERBILL",
-                declaration_id="B-FREIGHT-OVERBILL",
-                port_origin_code="CNSZX",
-                port_origin_name="Shenzhen",
-                port_dest_code="USLAX",
-                port_dest_name="Los Angeles",
-                invoice_number="FRT-2026-NIGHTMARE",
-                incoterm="FOB",
-                invoice_amount=Decimal("6047.50"),
-                insurance_amount=Decimal("0.00"),
-                line_items=reconciled_items,
-                audit_status="UNVERIFIED_RAW_INGEST",
-                penalty_status="CARRIER_OVERBILLING_DETECTED",
-            )
-            reconciled_xml = self.generate_universal_interchange_xml(
-                shipment_id="S-FREIGHT-OVERBILL",
-                declaration_id="B-FREIGHT-OVERBILL",
-                port_origin_code="CNSZX",
-                port_origin_name="Shenzhen",
-                port_dest_code="USLAX",
-                port_dest_name="Los Angeles",
-                invoice_number="FRT-2026-NIGHTMARE",
-                incoterm="FOB",
-                invoice_amount=Decimal("4500.00"),
-                insurance_amount=Decimal("0.00"),
-                line_items=reconciled_items,
-                audit_status="CLEARED_WITH_RECONCILIATION",
-                penalty_status="OVERBILLING_INTERCEPTED",
-            )
-            return {
-                "concept_id": concept_id,
-                "status": "READY_FOR_INGESTION",
-                "schema_version": "1.1",
-                "reconciled_lawful_xml": reconciled_xml,
-                "raw_unaudited_xml": raw_xml,
-                "diff_summary": [
-                    {
-                        "node": "InvoiceAmount",
-                        "raw": "6047.50",
-                        "reconciled": "4500.00",
-                        "statute": "FMC 46 U.S.C. § 41104",
-                        "status": "OVERBILLING_DISALLOWED",
-                    }
-                ],
-            }
-
-        # Default / Concept 1 Customs:
-        # Raw invoice misclassified at 8471.30, Reconciled at 8542.31
-        reconciled_items = [
-            {
-                "line_number": 1,
-                "description": "Industrial Controller Assembly with Integrated Circuitry",
-                "hts_code": "8542.31",
-                "value": Decimal("148500.00"),
-            }
-        ]
-        reconciled_xml = self.generate_universal_interchange_xml(
-            shipment_id=f"S-{concept_id.upper()}",
-            port_origin_code="CNSZX",
-            port_origin_name="Shenzhen",
-            port_dest_code="USLAX",
-            port_dest_name="Los Angeles",
-            invoice_amount=Decimal("148500.00"),
-            insurance_amount=Decimal("1450.00"),
-            line_items=reconciled_items,
-            audit_status="CLEARED_WITH_RECONCILIATION",
-            penalty_status="19_USC_1592_PROTECTED",
-        )
-
-        raw_items = [
-            {
-                "line_number": 1,
-                "description": "Industrial Controller Assembly with Integrated Circuitry",
-                "hts_code": "8471.30",
-                "value": Decimal("148500.00"),
-            }
-        ]
-        raw_xml = self.generate_universal_interchange_xml(
-            shipment_id=f"S-{concept_id.upper()}",
-            port_origin_code="CNSZX",
-            port_origin_name="Shenzhen",
-            port_dest_code="USLAX",
-            port_dest_name="Los Angeles",
-            invoice_amount=Decimal("148500.00"),
-            insurance_amount=Decimal("0.00"),
-            line_items=raw_items,
-            audit_status="UNVERIFIED_RAW_INGEST",
-            penalty_status="UNAUDITED_DEFECT_EXPOSURE",
-        )
-
-        return {
-            "concept_id": concept_id,
-            "status": "READY_FOR_INGESTION",
+        data = audit.extracted_data or {}
+        cid = audit.concept_id
+        released = audit.quarantine_status == "RELEASED"
+        status = "READY_FOR_INGESTION" if released else "HELD_PENDING_REVIEW"
+        base = {
+            "concept_id": cid,
+            "audit_run_id": audit.audit_run_id,
             "schema_version": "1.1",
-            "reconciled_lawful_xml": reconciled_xml,
-            "raw_unaudited_xml": raw_xml,
-            "diff_summary": [
-                {
-                    "node": "InsuranceAmount",
-                    "raw": "0.00",
-                    "reconciled": "1450.00",
-                    "statute": "19 CFR § 152.103",
-                    "status": "CORRECTED",
-                },
-                {
-                    "node": "HarmonizedCode",
-                    "raw": "8471.30",
-                    "reconciled": "8542.31",
-                    "statute": "WCO GRI 3(b)",
-                    "status": "RECLASSIFIED",
-                },
-            ],
+            "schema_validation": "structural subset (in-repo XSD); not validated against WiseTech-published schemas",
         }
+        dest_code = "USLAX" if "LOS ANGELES" in str(data.get("port_of_entry", "LOS ANGELES")).upper() else "UNKNOWN"
+
+        if cid in ("concept_1_customs", "concept_clean_fob"):
+            items = [it for it in data.get("items") or [] if isinstance(it, dict)]
+            lawful_hts = str(data.get("lawful_hts") or "")
+            declared_hts = str(data.get("declared_hts") or "")
+            raw_lines, rec_lines, diffs = [], [], []
+            for it in items:
+                stated = Decimal(str(it.get("stated_total") or "0"))
+                calc = (Decimal(str(it.get("quantity") or "0")) * Decimal(str(it.get("unit_price") or "0"))).quantize(Decimal("0.01"))
+                hts = str(it.get("hts_code") or "")
+                rec_hts = lawful_hts if (declared_hts and hts == declared_hts and lawful_hts) else hts
+                raw_lines.append({"line_number": it.get("line_number"), "description": it.get("description", ""), "hts_code": hts, "value": stated})
+                rec_lines.append({"line_number": it.get("line_number"), "description": it.get("description", ""), "hts_code": rec_hts, "value": calc})
+                if calc != stated:
+                    diffs.append({"node": f"CommercialInvoiceLine[{it.get('line_number')}]/CustomsValue", "raw": f"{stated:.2f}",
+                                  "reconciled": f"{calc:.2f}", "statute": "19 CFR 141.86", "status": "CORRECTED"})
+                if rec_hts != hts:
+                    diffs.append({"node": f"CommercialInvoiceLine[{it.get('line_number')}]/HarmonizedCode", "raw": hts,
+                                  "reconciled": rec_hts, "statute": "GRI 1 / Note 12(b) to Chapter 85", "status": "RECLASSIFICATION_PROPOSED"})
+            freight = Decimal(str(data.get("freight_charge") or "0"))
+            insurance = Decimal(str(data.get("insurance_charge") or "0"))
+            incoterm = str(data.get("incoterms") or "").split(" ")[0] or "UNK"
+            raw_total = sum((ln["value"] for ln in raw_lines), Decimal("0")) + (freight + insurance if incoterm == "CIF" else Decimal("0"))
+            rec_total = sum((ln["value"] for ln in rec_lines), Decimal("0"))
+            if raw_total != rec_total:
+                diffs.append({"node": "InvoiceAmount", "raw": f"{raw_total:.2f}", "reconciled": f"{rec_total:.2f}",
+                              "statute": "19 U.S.C. 1401a(b)(4)(A)", "status": "NON_DUTIABLE_CHARGES_DEDUCTED"})
+            common: Dict[str, Any] = dict(
+                shipment_id=f"S-{audit.audit_run_id[4:14]}",
+                declaration_id=f"B-{audit.audit_run_id[4:14]}",
+                port_origin_code="CNYTN", port_origin_name="Yantian",
+                port_dest_code=dest_code, port_dest_name="Los Angeles / Long Beach",
+                invoice_number=str(data.get("invoice_number") or "UNKNOWN"),
+                incoterm=incoterm,
+                insurance_amount=insurance,
+            )
+            raw_xml = self.generate_universal_interchange_xml(
+                **common, invoice_amount=raw_total, line_items=raw_lines,
+                audit_status="UNVERIFIED_RAW_INGEST", penalty_status="UNAUDITED",
+            )
+            rec_xml = self.generate_universal_interchange_xml(
+                **common, invoice_amount=rec_total, line_items=rec_lines,
+                audit_status="RECONCILED" if diffs else "CLEARED_NO_EXCEPTIONS",
+                penalty_status="EXPOSURE_FLAGGED_FOR_REVIEW" if diffs else "NO_EXCEPTIONS",
+            )
+            return {**base, "status": status, "raw_unaudited_xml": raw_xml, "reconciled_lawful_xml": rec_xml, "diff_summary": diffs}
+
+        if cid == "concept_2_freight":
+            base_freight = Decimal(str(data.get("base_freight") or "0"))
+            fsc = (base_freight * Decimal(str(data.get("billed_fsc_rate") or "0"))).quantize(Decimal("0.01"))
+            chs = Decimal(str(data.get("chassis_split_fee") or "0"))
+            det = Decimal(str(data.get("detention_billed") or "0"))
+            raw_total = base_freight + fsc + chs + det
+            rec_total = raw_total - audit.metrics.carrier_overbilling_caught
+            common = dict(
+                shipment_id=f"S-{audit.audit_run_id[4:14]}", declaration_id=f"B-{audit.audit_run_id[4:14]}",
+                port_origin_code="CNYTN", port_origin_name="Yantian", port_dest_code="USLAX", port_dest_name="Los Angeles",
+                invoice_number=str(data.get("invoice_number") or "UNKNOWN"), incoterm="FOB", insurance_amount=Decimal("0.00"),
+                line_items=[{"line_number": 1, "description": "Ocean freight and audited surcharges", "hts_code": "", "value": base_freight}],
+            )
+            raw_xml = self.generate_universal_interchange_xml(**common, invoice_amount=raw_total,
+                                                               audit_status="UNVERIFIED_RAW_INGEST", penalty_status="UNAUDITED")
+            rec_xml = self.generate_universal_interchange_xml(**common, invoice_amount=rec_total,
+                                                               audit_status="RECONCILED", penalty_status="OVERBILLING_DISPUTED")
+            diffs = [] if raw_total == rec_total else [{
+                "node": "InvoiceAmount", "raw": f"{raw_total:.2f}", "reconciled": f"{rec_total:.2f}",
+                "statute": "Service contract / 46 CFR Part 541", "status": "OVERBILLING_DISPUTED",
+            }]
+            return {**base, "status": status, "raw_unaudited_xml": raw_xml, "reconciled_lawful_xml": rec_xml, "diff_summary": diffs}
+
+        reason = "BLOCKED_DO_NOT_TRANSMIT" if cid == "concept_4_sanctions" and not released else "NOT_APPLICABLE"
+        return {**base, "status": reason, "raw_unaudited_xml": "", "reconciled_lawful_xml": "", "diff_summary": []}
+
 
 cargowise_exporter = CargoWiseExportService()
 cargowise_xml_generator = cargowise_exporter

@@ -183,7 +183,6 @@ export const AmbientMotionBackground: React.FC = () => {
       isVisible = !document.hidden;
       if (isVisible) {
         lastEventTime = performance.now();
-        lastTime = performance.now();
         animationFrameId = requestAnimationFrame(render);
       } else {
         cancelAnimationFrame(animationFrameId);
@@ -193,13 +192,10 @@ export const AmbientMotionBackground: React.FC = () => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // --- Render Loop ---
-    let lastTime = performance.now();
 
     const render = (currentTime: number) => {
       if (!isVisible) return;
 
-      const elapsed = currentTime - lastTime;
-      lastTime = currentTime;
 
       // Exponential decay on mouse velocity
       mouseVelocity *= 0.94;

@@ -1,12 +1,13 @@
 import asyncio
 import hashlib
 import os
+import re
 import tempfile
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
@@ -21,13 +22,22 @@ from app.models.schemas import (
     KillShotMetrics,
     LeadCaptureRequest,
     TelemetryEvent,
+    default_engagement_policy,
 )
 from app.models.valuation_models import AssistItem, EntryValuationAudit, PriorDisclosurePackage
 from app.services.cargowise_xml import cargowise_xml_generator
-from app.services.extractor import NIGHTMARE_GROUND_TRUTH, TradeDocumentExtractor
+from app.services.extractor import (
+    CALC_VERSION,
+    NIGHTMARE_GROUND_TRUTH,
+    RULESET_HASH,
+    TradeDocumentExtractor,
+    compute_run_digest,
+)
 from app.services.hts_classifier import HTSClassifierEngine
 from app.services.layout_extractor import layout_extractor
 from app.services.lead_store import lead_store
+from app.services.pdf_field_parser import UnreadablePdfError, parse_document
+from app.services.resolution_ledger import resolution_ledger
 from app.services.sanctions_screener import ScreeningReport, sanctions_screener
 from app.services.valuation_ledger import CustomsValuationService
 
@@ -39,7 +49,7 @@ MAX_TELEMETRY_CAPACITY = 5000
 IN_MEMORY_LEADS: list[dict] = []
 IN_MEMORY_TELEMETRY: list[dict] = []
 
-# Sliding-window rate limiters per client IP with bounded memory & TTL eviction (H5)
+# Sliding-window rate limiters per client with bounded memory and TTL eviction
 class InMemoryRateLimiter:
     """
     Sliding window in-memory rate limiter tracking client requests per minute,
@@ -83,6 +93,22 @@ class InMemoryRateLimiter:
     def reset(self):
         self._requests.clear()
 
+def client_key(request: Request) -> str:
+    """
+    Rate-limit key for a request. Behind a trusted reverse proxy the socket peer is the
+    proxy, so the right-most X-Forwarded-For hop that is not itself a trusted proxy is
+    used. The header is ignored for untrusted peers, so clients cannot spoof their key.
+    """
+    peer = request.client.host if request.client else "unknown"
+    trusted = set(settings.TRUSTED_PROXY_IPS)
+    if peer in trusted:
+        hops = [h.strip() for h in request.headers.get("x-forwarded-for", "").split(",") if h.strip()]
+        for hop in reversed(hops):
+            if hop not in trusted:
+                return hop
+    return peer
+
+
 leads_rate_limiter = InMemoryRateLimiter(requests_per_minute=60)
 telemetry_rate_limiter = InMemoryRateLimiter(requests_per_minute=300)
 upload_rate_limiter = InMemoryRateLimiter(requests_per_minute=30)
@@ -108,8 +134,7 @@ async def check_lead_payload(request: Request):
             status_code=413,
             detail=f"Payload size exceeds maximum allowed limit of {MAX_LEAD_PAYLOAD_BYTES} bytes."
         )
-    client_ip = request.client.host if request.client else "127.0.0.1"
-    if not leads_rate_limiter.check(client_ip):
+    if not leads_rate_limiter.check(client_key(request)):
         raise HTTPException(
             status_code=429,
             detail="Rate limit exceeded for lead capture. Please try again shortly."
@@ -132,8 +157,7 @@ async def check_telemetry_payload(request: Request):
             status_code=413,
             detail=f"Payload size exceeds maximum allowed limit of {MAX_TELEMETRY_PAYLOAD_BYTES} bytes."
         )
-    client_ip = request.client.host if request.client else "127.0.0.1"
-    if not telemetry_rate_limiter.check(client_ip):
+    if not telemetry_rate_limiter.check(client_key(request)):
         raise HTTPException(
             status_code=429,
             detail="Rate limit exceeded for telemetry events. Please try again shortly."
@@ -169,6 +193,29 @@ async def get_audit(
     # Wrap synchronous extractor run_audit in asyncio.to_thread so async workers are never blocked
     return await asyncio.to_thread(extractor.run_audit, concept_id)
 
+_DOC_TYPE_TO_CONCEPT = {
+    "customs_invoice": "concept_1_customs",
+    "freight_invoice": "concept_2_freight",
+    "drawback_claim": "concept_3_drawback",
+    "sanctions_dossier": "concept_4_sanctions",
+}
+
+
+async def _read_capped(file: UploadFile, limit: int) -> bytes:
+    """Read an upload in 64 KB chunks, refusing as soon as it exceeds ``limit`` bytes."""
+    chunks: list[bytes] = []
+    size = 0
+    while chunk := await file.read(64 * 1024):
+        size += len(chunk)
+        if size > limit:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Uploaded file exceeds maximum limit of {limit // (1024 * 1024)} MB.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 @router.post("/audit/upload", response_model=AuditResult)
 async def upload_audit_document(
     request: Request,
@@ -176,109 +223,120 @@ async def upload_audit_document(
     extractor: TradeDocumentExtractor = Depends(get_extractor_service),
 ):
     """
-    Accepts a real PDF document upload (max 5 MB), verifies %PDF- magic bytes,
-    extracts layout tokens and structured trade fields via pdf_field_parser,
-    and returns a fully calculated, deterministic AuditResult.
+    Audit an uploaded PDF (max 5 MB, 50 pages).
+
+    The document is parsed from its own text layer; findings are anchored to its own
+    text; the run id binds its SHA-256. Anything that cannot be read completely is
+    QUARANTINED with the reasons listed, never released.
     """
-    client_ip = request.client.host if request.client else "127.0.0.1"
-    if not upload_rate_limiter.check(client_ip):
-        raise HTTPException(
-            status_code=429,
-            detail="Rate limit exceeded for document uploads. Please wait a moment."
-        )
+    if not upload_rate_limiter.check(client_key(request)):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for document uploads. Please wait a moment.")
 
-    # Check content length header if provided
     content_length = request.headers.get("content-length")
-    if content_length:
-        try:
-            if int(content_length) > MAX_UPLOAD_PAYLOAD_BYTES:
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"Uploaded file exceeds maximum limit of {MAX_UPLOAD_PAYLOAD_BYTES // (1024 * 1024)} MB."
-                )
-        except ValueError:
-            pass
-
-    # Read file content safely
-    contents = await file.read()
-    if len(contents) > MAX_UPLOAD_PAYLOAD_BYTES:
+    if content_length and content_length.isdigit() and int(content_length) > MAX_UPLOAD_PAYLOAD_BYTES + 64 * 1024:
         raise HTTPException(
             status_code=413,
-            detail=f"Uploaded file exceeds maximum limit of {MAX_UPLOAD_PAYLOAD_BYTES // (1024 * 1024)} MB."
+            detail=f"Uploaded file exceeds maximum limit of {MAX_UPLOAD_PAYLOAD_BYTES // (1024 * 1024)} MB.",
         )
 
-    # Magic-byte verification: must start with %PDF-
+    contents = await _read_capped(file, MAX_UPLOAD_PAYLOAD_BYTES)
     if not contents.startswith(b"%PDF-"):
         raise HTTPException(
             status_code=400,
-            detail="Invalid file format. Uploaded file must be a valid PDF document with %PDF- header."
+            detail="Invalid file format. Uploaded file must be a valid PDF document with %PDF- header.",
         )
 
-    # Write to a temporary file for pypdf layout and field extraction
+    document_sha256 = hashlib.sha256(contents).hexdigest()
+    filename = os.path.basename(file.filename or "uploaded.pdf")
+
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
         tmp_pdf.write(contents)
         tmp_pdf_path = tmp_pdf.name
 
     try:
-        from app.services.pdf_field_parser import parse_document
-        parsed_doc = await asyncio.to_thread(parse_document, tmp_pdf_path)
-        doc_type = parsed_doc.document_type
-        payload = parsed_doc.payload
-        bboxes = parsed_doc.bounding_boxes
+        try:
+            parsed_doc = await asyncio.to_thread(parse_document, tmp_pdf_path)
+        except UnreadablePdfError as e:
+            raise HTTPException(status_code=413 if e.too_large else 422, detail=str(e)) from e
 
-        # Map document_type to concept scenario or custom execution
-        if doc_type == "customs_invoice":
-            concept_id = "concept_1_customs"
-        elif doc_type == "freight_invoice":
-            concept_id = "concept_2_freight"
-        elif doc_type == "drawback_claim":
-            concept_id = "concept_3_drawback"
-        elif doc_type == "sanctions_dossier":
-            concept_id = "concept_4_sanctions"
-        else:
-            concept_id = "concept_clean_fob"
-
-        file_hash = hashlib.sha256(contents).hexdigest()[:12]
-
-        # If document type is unrecognized / generic without trade fields, fail closed with Quarantine
-        if doc_type in ("unknown", "generic_trade_document"):
+        concept_id = _DOC_TYPE_TO_CONCEPT.get(parsed_doc.document_type)
+        if concept_id is None:
+            no_text = parsed_doc.metadata.get("text_chars", 0) == 0
+            reason = "NO_TEXT_LAYER" if no_text else "UNRECOGNIZED_DOCUMENT_TYPE"
+            policy = default_engagement_policy()
+            digest = compute_run_digest(policy, document_sha256)
             return AuditResult(
                 concept_id="uploaded_custom_doc",
-                title=f"Custom Upload: {file.filename or 'Document'}",
-                subtitle="Unrecognized Document Structure • Mandatory Broker Review Required",
-                document_filename=file.filename or "uploaded.pdf",
-                document_url="",
-                metrics=KillShotMetrics(
-                    penalty_exposure_avoided=Decimal("0.00"),
-                    carrier_overbilling_caught=Decimal("0.00"),
-                    drawback_unclaimed_unlocked=Decimal("0.00"),
+                title=f"Uploaded: {filename}",
+                subtitle=(
+                    "No text layer (scanned image?) • OCR is not performed • Broker review required"
+                    if no_text
+                    else "Unrecognized document type • Broker review required"
                 ),
+                document_filename=filename,
+                document_url="",
+                metrics=KillShotMetrics(),
                 discrepancies=[],
-                extracted_data={"raw_status": "UNRECOGNIZED_DOCUMENT_TYPE"},
+                extracted_data={"raw_status": reason, "type_scores": parsed_doc.metadata.get("type_scores", {})},
                 offline_fallback_active=True,
-                audit_run_id=f"RUN-2026-UPLOAD-{file_hash}",
-                calc_version="2026.1.0",
+                audit_run_id=f"RUN-{digest[:20].upper()}",
+                run_digest=digest,
+                document_sha256=document_sha256,
+                ruleset_hash=RULESET_HASH,
+                calc_version=CALC_VERSION,
                 executed_at=datetime.now(timezone.utc).isoformat(),
+                source="upload",
+                quarantine_reasons=[reason],
                 quarantine_status="QUARANTINED",
+                engagement_policy=policy,
             )
 
-        # Run audit on the parsed payload
-        result = await asyncio.to_thread(extractor.run_audit, concept_id, payload)
-        result.audit_run_id = f"RUN-2026-UPLOAD-{file_hash}"
-        result.document_filename = file.filename or result.document_filename
-        result.title = f"Uploaded Audit: {file.filename or result.title}"
-
-        # Attach real parsed bounding boxes
-        for d in result.discrepancies:
-            for k, bb in bboxes.items():
-                if k in d.id.lower() or k in d.title.lower():
-                    d.bounding_box = bb
-                    break
-
+        result = await asyncio.to_thread(
+            extractor.run_audit,
+            concept_id,
+            parsed_document=parsed_doc,
+            document_sha256=document_sha256,
+            document_filename=filename,
+        )
+        result.title = f"Uploaded: {filename}"
         return result
     finally:
         if os.path.exists(tmp_pdf_path):
             os.remove(tmp_pdf_path)
+
+
+class ResolutionRequest(BaseModel):
+    finding_id: str = Field(..., min_length=1, max_length=64)
+    action: Literal["APPROVE", "REQUEST_DOCS", "ESCALATE", "OVERRIDE_HTS", "REOPEN"]
+    reason: str = Field(..., min_length=3, max_length=2000)
+    actor: str = Field(default="analyst", min_length=1, max_length=120)
+    override_value: Optional[str] = Field(default=None, max_length=64)
+
+
+_RUN_ID_RE = r"^RUN-[0-9A-F]{8,64}$"
+
+
+@router.post("/audit/{run_id}/resolutions")
+async def append_resolution(run_id: str, body: ResolutionRequest, request: Request):
+    """Append an analyst decision to the hash-chained ledger for an audit run."""
+    if not re.match(_RUN_ID_RE, run_id):
+        raise HTTPException(status_code=422, detail="Malformed run id")
+    if not leads_rate_limiter.check(client_key(request)):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded.")
+    return await asyncio.to_thread(
+        resolution_ledger.append, run_id, body.finding_id, body.action, body.reason, body.actor, body.override_value
+    )
+
+
+@router.get("/audit/{run_id}/resolutions")
+async def list_resolutions(run_id: str):
+    """All decisions recorded for a run, oldest first, with a chain-integrity flag."""
+    if not re.match(_RUN_ID_RE, run_id):
+        raise HTTPException(status_code=422, detail="Malformed run id")
+    rows = await asyncio.to_thread(resolution_ledger.list, run_id)
+    valid = await asyncio.to_thread(resolution_ledger.verify_chain, run_id)
+    return {"run_id": run_id, "chain_valid": valid, "resolutions": rows}
+
 
 @router.get("/metrics", response_model=KillShotMetrics)
 async def get_aggregate_metrics(
@@ -309,7 +367,7 @@ def get_document(filename: str):
 @router.post("/layout/extract")
 async def extract_document_layout(filename: str = Query(..., description="Target PDF filename in nightmares dir")):
     """
-    Extracts layout bounding boxes using local docling/pypdf parser.
+    Extracts layout bounding boxes with the local pypdf parser (Docling when installed).
     Synchronous document conversion is executed inside asyncio.to_thread() to avoid blocking workers.
     """
     safe_name = os.path.basename(filename)
@@ -445,34 +503,43 @@ async def export_cargowise_xml_endpoint(request: CargoWiseExportRequest):
     return Response(content=xml_content, media_type="application/xml")
 
 @router.get("/scenarios")
-async def get_scenarios():
-    """Returns the 3 pre-loaded trade corridor scenarios."""
+async def get_scenarios(extractor: TradeDocumentExtractor = Depends(get_extractor_service)):
+    """The bundled sample documents, with the engine's headline result on each."""
+    c1, c2, c3 = await asyncio.gather(
+        asyncio.to_thread(extractor.run_audit, "concept_1_customs"),
+        asyncio.to_thread(extractor.run_audit, "concept_2_freight"),
+        asyncio.to_thread(extractor.run_audit, "concept_3_drawback"),
+    )
     return [
         {
-            "id": "scenario_durban_rotterdam",
-            "name": "Port of Durban to Rotterdam Electronics Shipment",
-            "corridor": "ZADUR -> NLRTM",
-            "risk_type": "CIF Marine Insurance Omission & GRI 3(b) Reclassification",
-            "statute": "EU Union Customs Code (Regulation (EU) No 952/2013) & WCO GRI 3(b)",
-            "default_exposure_usd": "36000.00",
+            "id": "scenario_shenzhen_la_invoice",
+            "concept_id": "concept_1_customs",
+            "name": "Shenzhen to Los Angeles commercial invoice",
+            "corridor": "CN -> USLAX",
+            "risk_type": "Classification, CIF valuation and line arithmetic",
+            "statute": "19 U.S.C. § 1592 & 19 U.S.C. § 1401a",
+            "default_exposure_usd": f"{c1.metrics.penalty_exposure_avoided:.2f}",
         },
         {
             "id": "scenario_long_beach_battery",
-            "name": "Trans-Pacific to Long Beach Lithium-Ion Battery Pack",
-            "corridor": "CNSZX -> USLAX",
-            "risk_type": "Section 301 Secondary Tariff & Chassis Split Surcharge",
-            "statute": "19 U.S.C. § 1592 & FMC Docket 21-08",
-            "default_exposure_usd": "48200.00",
+            "concept_id": "concept_2_freight",
+            "name": "Yantian to Los Angeles ocean freight bill",
+            "corridor": "CNYTN -> USLAX",
+            "risk_type": "Fuel surcharge, chassis split and detention in free time",
+            "statute": "19 U.S.C. § 1592 & 46 CFR Part 541",
+            "default_exposure_usd": f"{c2.metrics.carrier_overbilling_caught:.2f}",
         },
         {
-            "id": "scenario_steel_drawback",
-            "name": "Cross-Border Steel Assembly Duty Drawback",
-            "corridor": "KRINC -> USHOU",
-            "risk_type": "Unclaimed 99% Section 1313 Duty Drawback",
+            "id": "scenario_la_rotterdam_drawback",
+            "concept_id": "concept_3_drawback",
+            "name": "Los Angeles to Rotterdam re-export drawback",
+            "corridor": "USLAX -> NLRTM",
+            "risk_type": "Unclaimed unused-merchandise drawback",
             "statute": "19 U.S.C. § 1313",
-            "default_exposure_usd": "18400.00",
-        }
+            "default_exposure_usd": f"{c3.metrics.drawback_unclaimed_unlocked:.2f}",
+        },
     ]
+
 
 @router.get("/valuation/ledger", response_model=list[AssistItem])
 async def get_valuation_assist_ledger():
@@ -503,8 +570,7 @@ async def audit_entry_valuation_endpoint(request: ValuationAuditRequest):
 @router.post("/valuation/prior-disclosure", response_model=PriorDisclosurePackage)
 async def generate_prior_disclosure_endpoint(request: ValuationAuditRequest):
     """
-    Generates a formal 19 CFR § 162.74 Prior Disclosure package mitigating 19 U.S.C. § 1592
-    civil penalties down to statutory interest only.
+    Drafts a 19 CFR 162.74 prior disclosure (for review by a licensed broker or counsel).
     """
     audit = await asyncio.to_thread(
         valuation_service.audit_entry_valuation,
@@ -523,9 +589,12 @@ async def generate_prior_disclosure_endpoint(request: ValuationAuditRequest):
 @router.get("/cargowise/export/{concept_id}")
 async def export_cargowise_xml_by_concept_endpoint(concept_id: str):
     """
-    Exports audited trade data formatted as WiseTech CargoWise UniversalShipment XML (v1.1)
-    with pre-ingest verification tokens and diff annotations.
+    Raw vs reconciled UniversalShipment-style XML for a fixture concept, built from that
+    concept's audit result (validated only against the in-repo structural-subset XSD).
     """
-    return cargowise_xml_generator.generate_diff_payload(concept_id)
+    if concept_id not in NIGHTMARE_GROUND_TRUTH:
+        raise HTTPException(status_code=404, detail=f"Concept '{concept_id}' not found.")
+    audit = await asyncio.to_thread(TradeDocumentExtractor().run_audit, concept_id)
+    return cargowise_xml_generator.generate_diff_payload(audit)
 
 

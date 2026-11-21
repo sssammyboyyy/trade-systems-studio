@@ -42,7 +42,7 @@ export const ParadigmSwitcher: React.FC<ParadigmSwitcherProps> = ({
   }, [onChange]);
 
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0F172A]/90 border border-[#1F2937] backdrop-blur-md shadow-2xl">
+    <div className="flex items-center gap-1 p-1 rounded-xl bg-terminal-slate/90 border border-terminal-subtle backdrop-blur-md shadow-2xl">
       {showLabel && (
         <span className="text-[10px] font-mono text-slate-400 px-2 uppercase tracking-widest hidden md:inline-block">
           PARADIGM:
@@ -57,7 +57,7 @@ export const ParadigmSwitcher: React.FC<ParadigmSwitcherProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-150 active:scale-[0.97] ${
               isActive
                 ? "bg-blue-600 text-canvas-stone font-semibold shadow-sm border border-blue-400/40"
-                : "text-slate-400 hover:text-slate-200 hover:bg-[#1E293B]/60"
+                : "text-slate-400 hover:text-slate-200 hover:bg-terminal-elevated/60"
             }`}
             title={`Switch to ${p.label} (${p.shortcut})`}
           >
@@ -67,7 +67,7 @@ export const ParadigmSwitcher: React.FC<ParadigmSwitcherProps> = ({
               className={`text-[9px] px-1 py-0.2 rounded border ml-0.5 ${
                 isActive
                   ? "bg-blue-700/80 border-blue-400/40 text-blue-100"
-                  : "bg-[#1E293B] border-[#334155] text-slate-400"
+                  : "bg-terminal-elevated border-terminal-border text-slate-400"
               }`}
             >
               {p.shortcut}

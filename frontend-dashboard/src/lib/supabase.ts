@@ -83,7 +83,7 @@ function sanitizeTelemetryMetadata(metadata?: Record<string, any>): Record<strin
 }
 
 /**
- * Tracks strictly zero-PII telemetry events ONLY when explicit user consent is granted (M13).
+ * Tracks strictly zero-PII telemetry events ONLY when explicit user consent is granted.
  */
 export async function recordTelemetry(event: TelemetryPayload): Promise<void> {
   if (!isTelemetryConsentGranted()) {
@@ -117,7 +117,7 @@ export async function recordTelemetry(event: TelemetryPayload): Promise<void> {
       if (stored.length > 50) stored.shift();
       localStorage.setItem("telemetry_cache", JSON.stringify(stored));
     }
-  } catch (err) {
-    // Non-blocking telemetry silence
+  } catch {
+    // Telemetry is best-effort and never blocks the UI
   }
 }

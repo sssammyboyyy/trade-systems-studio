@@ -12,9 +12,9 @@ interface IcpPersonaSwitcherProps {
 }
 
 const LENSES: Array<{ id: IcpPersona; label: string; icon: React.ReactNode }> = [
-  { id: "cfo", label: "CFO / EBITDA", icon: <Briefcase className="w-3.5 h-3.5" /> },
-  { id: "counsel", label: "General Counsel", icon: <Scale className="w-3.5 h-3.5" /> },
-  { id: "cto", label: "CTO / Platform", icon: <Cpu className="w-3.5 h-3.5" /> },
+  { id: "cfo", label: "Finance", icon: <Briefcase className="w-3.5 h-3.5" /> },
+  { id: "counsel", label: "Counsel", icon: <Scale className="w-3.5 h-3.5" /> },
+  { id: "cto", label: "Engineering", icon: <Cpu className="w-3.5 h-3.5" /> },
 ];
 
 export const IcpPersonaSwitcher: React.FC<IcpPersonaSwitcherProps> = ({
@@ -27,9 +27,9 @@ export const IcpPersonaSwitcher: React.FC<IcpPersonaSwitcherProps> = ({
   };
 
   return (
-    <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-[#0F172A] border border-[#1F2937] rounded-lg font-mono text-xs">
-      <span className="text-[10px] text-slate-400 uppercase px-2 font-semibold hidden md:inline">
-        Executive Lens:
+    <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-terminal-slate border border-terminal-subtle rounded-lg font-mono text-xs">
+      <span className="text-[10px] text-ink-muted uppercase px-2 font-semibold hidden md:inline">
+        View as
       </span>
 
       {LENSES.map((lens) => {
@@ -39,10 +39,10 @@ export const IcpPersonaSwitcher: React.FC<IcpPersonaSwitcherProps> = ({
             key={lens.id}
             onClick={() => handleSwitch(lens.id)}
             aria-pressed={isActive}
-            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-md font-bold text-[11px] uppercase tracking-wider transition-colors duration-200 ${
+            className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-md font-semibold text-[11px] uppercase tracking-wider transition-colors duration-200 ${
               isActive
                 ? "bg-cobalt-600 text-canvas-stone shadow-sm"
-                : "text-slate-400 hover:text-ink-primary hover:bg-[#1E293B]"
+                : "text-ink-muted hover:text-ink-primary hover:bg-terminal-elevated"
             }`}
           >
             {lens.icon}

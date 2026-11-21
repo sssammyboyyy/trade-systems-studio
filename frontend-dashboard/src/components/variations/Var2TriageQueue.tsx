@@ -1,30 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { usePreIngestFirewall, playPseudoHaptic } from "@/lib/firewall-core";
 import { ThreeWayResolutionBar } from "../ThreeWayResolutionBar";
 import { TabularAmount } from "../TabularAmount";
-import { ResolutionActionType } from "@/lib/types";
+
 import { resolveAssetPath } from "@/lib/assets";
-import {
-  Clock,
-  Filter,
-  Search,
-  Command,
-  ArrowDown,
-  ArrowUp,
-  AlertTriangle,
-  AlertOctagon,
-  CheckCircle2,
-  X,
-  ExternalLink,
-  ChevronRight,
-  Shield,
-  Layers,
-  Sparkles,
-  RotateCcw,
-} from "lucide-react";
+import { MOCK_AUDIT_DATA } from "@/data/mockData";
+import { Clock, Filter, Search, Command, X, ExternalLink, ChevronRight } from "lucide-react";
 
 export type OwnerRoute = "all" | "broker_desk" | "ap_carrier_dispute" | "shipper_outreach";
 
@@ -76,14 +60,14 @@ const STATUTORY_CONFIGS = [
     title: "Unreported Dutiable Assist & Freight Deductible Overstatement",
     description: "Buyer supplied offshore production tooling without 19 CFR § 152.103 customs assist declaration.",
     severity: "critical" as const,
-    baseAmount: 125000,
+    baseAmount: 62500,
     confidenceBase: 0.74,
   },
   {
     ownerRoute: "ap_carrier_dispute" as const,
-    statutoryCode: "FMC Docket 21-08 / OSRA 2022",
+    statutoryCode: "46 CFR 545.5 / Part 541",
     title: "Unauthorized Dual Chassis Split & Inflated Bunker Surcharge",
-    description: "Carrier invoiced $1,547.50 demurrage accrued while chassis pool was locked under port terminal congestion.",
+    description: "Detention billed for days the terminal was closed, with no chassis work order on file.",
     severity: "warning" as const,
     baseAmount: 1547.5,
     confidenceBase: 0.92,
@@ -126,6 +110,11 @@ const STATUTORY_CONFIGS = [
   },
 ];
 
+const amt = (concept: string, key: "penalty_exposure_avoided" | "carrier_overbilling_caught" | "drawback_unclaimed_unlocked") =>
+  Number(MOCK_AUDIT_DATA[concept]?.metrics[key] ?? 0);
+
+// Rows 1-4 are the bundled sample documents with their engine results; rows 5-500 are a
+// synthetic queue (seeded, deterministic) used to exercise virtualised triage at volume.
 function generate500Invoices(): TriageInvoiceRow[] {
   const rows: TriageInvoiceRow[] = [
     {
@@ -135,9 +124,9 @@ function generate500Invoices(): TriageInvoiceRow[] {
       corridor: "YTN -> LAX (Transpacific)",
       ownerRoute: "broker_desk",
       statutoryCode: "19 U.S.C. § 1592",
-      discrepancyTitle: "Unreported Dutiable Assist & CIF Freight Deductible Overstatement",
-      discrepancyDescription: "Buyer supplied offshore production tooling ($45,000) without 19 CFR § 152.103 customs assist declaration, creating 19 U.S.C. § 1592 Negligence exposure.",
-      exposureAmount: 125000.0,
+      discrepancyTitle: "Processor Declared Under 8471.30, Line Arithmetic Error, CIF Freight Not Deducted",
+      discrepancyDescription: "Sample invoice SSAC-2024-89912: AI processors declared under 8471.30 (no Section 301 duty) rather than 8542.31 (25% in April 2024); line 1 extension overstated by $3,000; ocean freight left in a CIF total. Amount is the 19 U.S.C. § 1592(c)(3) negligence maximum.",
+      exposureAmount: amt("concept_1_customs", "penalty_exposure_avoided"),
       confidence: 0.82,
       severity: "critical",
       cutoffSeconds: 14 * 3600 - 120,
@@ -150,10 +139,10 @@ function generate500Invoices(): TriageInvoiceRow[] {
       carrier: "MSC MEDITERRANEAN",
       corridor: "SHA -> LGB (Transpacific)",
       ownerRoute: "ap_carrier_dispute",
-      statutoryCode: "FMC Docket 21-08 / OSRA 2022",
-      discrepancyTitle: "Unauthorized Dual Chassis Split & Inflated Fuel Surcharge (FSC)",
-      discrepancyDescription: "Carrier invoiced unauthorized $450 chassis split fee and inflated FSC on clean port gate-out within 4-day free time.",
-      exposureAmount: 1259.8,
+      statutoryCode: "46 CFR 545.5 / Part 541",
+      discrepancyTitle: "Fuel Surcharge Above Contract, Chassis Split Without Work Order, Detention Inside Free Time",
+      discrepancyDescription: "Sample freight invoice PACL-FRT-982104: FSC billed at 32.5% vs 24.0% contracted, $285 chassis split with no work order, and $880 detention billed although the container out-gated on day 5 of 5 free days.",
+      exposureAmount: amt("concept_2_freight", "carrier_overbilling_caught"),
       confidence: 0.94,
       severity: "warning",
       cutoffSeconds: 14 * 3600 - 450,
@@ -168,8 +157,8 @@ function generate500Invoices(): TriageInvoiceRow[] {
       ownerRoute: "ap_carrier_dispute",
       statutoryCode: "19 U.S.C. § 1313",
       discrepancyTitle: "Unclaimed 99% Direct Identification Duty Drawback on Export BOL",
-      discrepancyDescription: "Matching 10-digit HTS 8542.31.0000 import entry matched paired export Bill of Lading within 5-year statutory window.",
-      exposureAmount: 19800.0,
+      discrepancyDescription: "Sample claim: 1,000 units imported on entry CBP-7501-84920184 (Jan 2024) matched by serial range to export B/L BGFU-0941824 (Mar 2024), inside the 5-year limit.",
+      exposureAmount: amt("concept_3_drawback", "drawback_unclaimed_unlocked"),
       confidence: 0.97,
       severity: "opportunity",
       cutoffSeconds: 14 * 3600 - 900,
@@ -185,7 +174,7 @@ function generate500Invoices(): TriageInvoiceRow[] {
       statutoryCode: "31 CFR § 501 / OFAC 50%",
       discrepancyTitle: "Blocked Entity Corporate Hierarchy: 55% Aggregate SDN Ownership",
       discrepancyDescription: "Target entity bis-el-cn-0941 owned 25% by Victor Petrov (SDN) and 30% by Rosoboronexport JSC (SDN). Blocked by operation of law under OFAC 50% Rule.",
-      exposureAmount: 350000.0,
+      exposureAmount: amt("concept_4_sanctions", "penalty_exposure_avoided"),
       confidence: 0.99,
       severity: "critical",
       cutoffSeconds: 14 * 3600 - 300,
@@ -229,7 +218,7 @@ function generate500Invoices(): TriageInvoiceRow[] {
 }
 
 export const Var2TriageQueue: React.FC = () => {
-  const { resolutionHistory, applyResolution } = usePreIngestFirewall();
+  const { resolutionHistory } = usePreIngestFirewall();
   const allRows = useMemo(() => generate500Invoices(), []);
 
   // Filter state
@@ -347,7 +336,7 @@ export const Var2TriageQueue: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="type-caption-mono uppercase text-ink-muted font-medium">
-                CARRIER CUTOFF COUNTDOWN
+                Carrier cutoff (demo clock)
               </span>
               <span className="inline-block w-2 h-2 rounded-full bg-red-400 animate-ping" />
             </div>
@@ -358,15 +347,15 @@ export const Var2TriageQueue: React.FC = () => {
         </div>
 
         {/* Keyboard Quick Command Instructions */}
-        <div className="hidden xl:flex items-center gap-2 font-mono text-xs text-slate-400 bg-[#0B0F19] px-3 py-2 rounded-lg border border-[#1F2937]">
+        <div className="hidden xl:flex items-center gap-2 font-mono text-xs text-slate-400 bg-canvas-dark px-3 py-2 rounded-lg border border-terminal-subtle">
           <span>TRIAGE HOTKEYS:</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-[#1E293B] border border-[#334155] text-slate-200">J</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-terminal-elevated border border-terminal-border text-slate-200">J</kbd>
           <span>Next</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-[#1E293B] border border-[#334155] text-slate-200">K</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-terminal-elevated border border-terminal-border text-slate-200">K</kbd>
           <span>Prev</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-[#1E293B] border border-[#334155] text-slate-200">Enter</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-terminal-elevated border border-terminal-border text-slate-200">Enter</kbd>
           <span>Inspect</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-[#1E293B] border border-[#334155] text-slate-200">⌘K</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-terminal-elevated border border-terminal-border text-slate-200">⌘K</kbd>
           <span>Command</span>
         </div>
 
@@ -378,8 +367,8 @@ export const Var2TriageQueue: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 500 invoices..."
-              className="pl-9 pr-4 py-2 bg-[#0B0F19] border border-[#1F2937] rounded-lg text-xs font-mono text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 w-48 sm:w-64"
+              placeholder="Search 500 invoices (4 samples + synthetic)"
+              className="pl-9 pr-4 py-2 bg-canvas-dark border border-terminal-subtle rounded-lg text-xs font-mono text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 w-48 sm:w-64"
             />
           </div>
           <button
@@ -387,7 +376,7 @@ export const Var2TriageQueue: React.FC = () => {
               playPseudoHaptic();
               setIsCommandBarOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1E293B] hover:bg-slate-700 border border-[#334155] text-xs font-mono text-slate-200 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-terminal-elevated hover:bg-slate-700 border border-terminal-border text-xs font-mono text-slate-200 transition-colors"
             title="Open Command Palette (⌘K)"
           >
             <Command className="w-3.5 h-3.5" />
@@ -428,7 +417,7 @@ export const Var2TriageQueue: React.FC = () => {
               <span>{chip.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isActive ? "bg-blue-700 text-blue-100" : "bg-[#1E293B] text-slate-400"
+                  isActive ? "bg-blue-700 text-blue-100" : "bg-terminal-elevated text-slate-400"
                 }`}
               >
                 {chip.count}
@@ -439,11 +428,11 @@ export const Var2TriageQueue: React.FC = () => {
       </div>
 
       {/* 3. VIRTUALIZED 500-ROW TRIAGE TABLE */}
-      <div className="rounded-xl border border-[#1F2937] bg-[#0F172A] overflow-hidden shadow-2xl">
+      <div className="rounded-xl border border-terminal-subtle bg-terminal-slate overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <div className="min-w-[1020px]">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-[#0B0F19] border-b border-[#1F2937] text-[10px] font-mono text-slate-400 uppercase font-semibold">
+            <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-canvas-dark border-b border-terminal-subtle text-[10px] font-mono text-slate-400 uppercase font-semibold">
               <div className="col-span-1">#</div>
               <div className="col-span-2">Entry & Carrier</div>
               <div className="col-span-2">Corridor</div>
@@ -456,7 +445,7 @@ export const Var2TriageQueue: React.FC = () => {
             {/* Virtual List Container */}
             <div
               ref={parentRef}
-              className="h-[580px] overflow-y-auto divide-y divide-[#1F2937]/60 scrollbar-thin font-mono text-xs"
+              className="h-[580px] overflow-y-auto divide-y divide-terminal-subtle/60 scrollbar-thin font-mono text-xs"
             >
               {filteredRows.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48 text-slate-400 text-xs">
@@ -495,7 +484,7 @@ export const Var2TriageQueue: React.FC = () => {
                     className={`grid grid-cols-12 gap-2 px-4 py-2.5 items-center cursor-pointer transition-colors duration-150 ${
                       isSelected
                         ? "bg-blue-900/30 border-l-4 border-l-blue-500"
-                        : "hover:bg-[#1E293B]/60"
+                        : "hover:bg-terminal-elevated/60"
                     }`}
                   >
                     {/* Index */}
@@ -657,7 +646,7 @@ export const Var2TriageQueue: React.FC = () => {
                 discrepancyId={inspectedRow.id}
                 confidence={inspectedRow.confidence}
                 statutoryCode={inspectedRow.statutoryCode}
-                onResolved={(action) => {
+                onResolved={() => {
                   playPseudoHaptic();
                 }}
               />

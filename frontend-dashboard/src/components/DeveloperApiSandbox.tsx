@@ -1,5 +1,6 @@
 "use client";
 
+import { BENCHMARK } from "@/lib/metrics";
 import React, { useState } from "react";
 import { Terminal, Copy, Check, Zap, Play, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -28,7 +29,7 @@ const ENDPOINT_CONFIGS: Record<EndpointKey, EndpointConfig> = {
     label: "/export/cargowise-xml",
     path: "/api/v1/export/cargowise-xml",
     method: "POST",
-    benchmarkLabel: "Tier 2 p99: 0.303 ms",
+    benchmarkLabel: `Tier 2 p99: ${BENCHMARK.tier2_p99_ms} ms`,
     payload: {
       shipment_id: "S00001000",
       declaration_id: "B00001000",
@@ -168,7 +169,7 @@ X-Fail-Closed-Gate: Conf(e) < 0.85 -> Broker Escalation
     label: "/valuation/audit-entry",
     path: "/api/v1/valuation/audit-entry",
     method: "POST",
-    benchmarkLabel: "Valuation p99: 0.303 ms",
+    benchmarkLabel: `Tier 2 p99: ${BENCHMARK.tier2_p99_ms} ms`,
     payload: {
       entry_number: "CBP-7501-84920184",
       importer_of_record: "Pacific Tech Imports LLC",
@@ -281,8 +282,8 @@ export const DeveloperApiSandbox: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-[#0F172A] border border-[#1F2937] rounded-xl overflow-hidden p-4 font-mono text-xs shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+    <div className="w-full bg-terminal-slate border border-terminal-subtle rounded-xl overflow-hidden p-4 font-mono text-xs shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-terminal-elevated">
         <div className="flex items-center gap-2 flex-wrap">
           <Terminal className="w-4 h-4 text-emerald-400" />
           <span className="font-bold text-slate-200">Developer API &amp; curl Playground</span>
@@ -293,7 +294,7 @@ export const DeveloperApiSandbox: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex bg-[#1E293B] rounded-lg p-0.5 border border-[#334155]/60 flex-wrap">
+          <div className="flex bg-terminal-elevated rounded-lg p-0.5 border border-terminal-border/60 flex-wrap">
             {(Object.keys(ENDPOINT_CONFIGS) as EndpointKey[]).map((key) => (
               <button
                 key={key}
@@ -310,7 +311,7 @@ export const DeveloperApiSandbox: React.FC = () => {
           <button
             onClick={handleCopy}
             aria-label="Copy curl command"
-            className="flex items-center gap-1 px-2.5 py-1 bg-[#1E293B] hover:bg-slate-700 text-slate-300 rounded border border-[#334155] transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 bg-terminal-elevated hover:bg-slate-700 text-slate-300 rounded border border-terminal-border transition-colors"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
             <span className="text-[11px]">{copied ? "Copied" : "Copy curl"}</span>
@@ -319,7 +320,7 @@ export const DeveloperApiSandbox: React.FC = () => {
       </div>
 
       <div className="mt-3 relative">
-        <pre className="p-3 bg-[#0B0F19] rounded-lg border border-[#1E293B] text-slate-300 overflow-x-auto text-[11px] leading-relaxed">
+        <pre className="p-3 bg-canvas-dark rounded-lg border border-terminal-elevated text-slate-300 overflow-x-auto text-[11px] leading-relaxed">
           <code>{curlSnippet}</code>
         </pre>
 
@@ -347,7 +348,7 @@ export const DeveloperApiSandbox: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 pt-3 border-t border-[#1E293B]"
+          className="mt-3 pt-3 border-t border-terminal-elevated"
         >
           <div className="flex items-center justify-between pb-1.5 text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
             <span>Terminal Response Payload</span>
@@ -355,7 +356,7 @@ export const DeveloperApiSandbox: React.FC = () => {
               {isLiveResponse ? "Live ASGI Verified" : "Static Example Response (Run Local Backend to Execute Live)"}
             </span>
           </div>
-          <pre className="p-3 bg-[#0B0F19] rounded-lg border border-emerald-950 text-emerald-300/90 overflow-x-auto text-[10px] leading-relaxed max-h-60">
+          <pre className="p-3 bg-canvas-dark rounded-lg border border-emerald-950 text-emerald-300/90 overflow-x-auto text-[10px] leading-relaxed max-h-60">
             <code>{responseOutput}</code>
           </pre>
         </motion.div>

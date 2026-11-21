@@ -2,7 +2,9 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Compass, ShieldAlert, FileCheck2, ArrowRight } from "lucide-react";
+import { Compass, ShieldAlert, FileCheck2 } from "lucide-react";
+import { MOCK_AUDIT_DATA } from "@/data/mockData";
+import { formatUsd } from "@/lib/money";
 
 export interface Scenario {
   id: string;
@@ -15,37 +17,40 @@ export interface Scenario {
   severity: "critical" | "warning" | "opportunity";
 }
 
+const usd = (v: string | number) => formatUsd(v).replace(/\.00$/, "");
+
+// The three bundled sample documents; amounts are the engine's results on each.
 export const CORRIDOR_SCENARIOS: Scenario[] = [
   {
-    id: "scenario_durban_rotterdam",
-    name: "Port of Durban to Rotterdam Electronics",
-    route: "ZADUR -> NLRTM",
+    id: "scenario_shenzhen_la_invoice",
+    name: "Shenzhen to Los Angeles commercial invoice",
+    route: "CN -> USLAX",
     concept_id: "concept_1_customs",
-    risk_type: "EU UCC Incoterms Dutiable Valuation & GRI 3(b) Classification",
-    statutory_code: "EU Union Customs Code (Reg. (EU) 952/2013, Art. 71)",
-    default_exposure: "$36,000",
-    severity: "critical"
+    risk_type: "Classification, CIF valuation and line arithmetic",
+    statutory_code: "19 U.S.C. § 1592 / § 1401a",
+    default_exposure: usd(MOCK_AUDIT_DATA.concept_1_customs.metrics.penalty_exposure_avoided),
+    severity: "critical",
   },
   {
-    id: "scenario_long_beach_battery",
-    name: "Trans-Pacific to Long Beach Lithium-Ion Pack",
-    route: "CNSZX -> USLAX",
+    id: "scenario_yantian_la_freight",
+    name: "Yantian to Los Angeles ocean freight bill",
+    route: "CNYTN -> USLAX",
     concept_id: "concept_2_freight",
-    risk_type: "Section 301 Secondary Tariff & Chassis Split Surcharge",
-    statutory_code: "19 U.S.C. § 1592 & FMC 46 U.S.C. § 41104",
-    default_exposure: "$48,200",
-    severity: "critical"
+    risk_type: "Fuel surcharge, chassis split and detention in free time",
+    statutory_code: "Service contract / 46 CFR Part 541",
+    default_exposure: usd(MOCK_AUDIT_DATA.concept_2_freight.metrics.carrier_overbilling_caught),
+    severity: "critical",
   },
   {
-    id: "scenario_steel_drawback",
-    name: "Cross-Border Steel Assembly Unused Merchandise",
-    route: "KRINC -> USHOU",
+    id: "scenario_la_rotterdam_drawback",
+    name: "Los Angeles to Rotterdam re-export drawback",
+    route: "USLAX -> NLRTM",
     concept_id: "concept_3_drawback",
-    risk_type: "Unclaimed 99% Section 1313 Duty Drawback",
-    statutory_code: "19 U.S.C. § 1313",
-    default_exposure: "$18,400",
-    severity: "opportunity"
-  }
+    risk_type: "Unclaimed unused-merchandise drawback",
+    statutory_code: "19 U.S.C. § 1313(j)",
+    default_exposure: usd(MOCK_AUDIT_DATA.concept_3_drawback.metrics.drawback_unclaimed_unlocked),
+    severity: "opportunity",
+  },
 ];
 
 interface ScenarioSelectorBarProps {
@@ -58,12 +63,12 @@ export const ScenarioSelectorBar: React.FC<ScenarioSelectorBarProps> = ({
   onSelectScenario
 }) => {
   return (
-    <div className="w-full bg-[#0F172A] border border-[#1F2937] rounded-xl p-3 mb-4 shadow-sm">
+    <div className="w-full bg-terminal-slate border border-terminal-subtle rounded-xl p-3 mb-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Compass className="w-4 h-4 text-blue-500" />
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
-            Load Sample Trade Corridor Scenario:
+            Sample documents
           </span>
         </div>
 
@@ -79,7 +84,7 @@ export const ScenarioSelectorBar: React.FC<ScenarioSelectorBarProps> = ({
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
                   isActive
                     ? "bg-blue-600/20 text-blue-400 border-blue-500/50 shadow-sm"
-                    : "bg-[#1E293B] text-slate-300 hover:text-ink-primary border-[#334155]/60 hover:border-slate-500"
+                    : "bg-terminal-elevated text-slate-300 hover:text-ink-primary border-terminal-border/60 hover:border-slate-500"
                 }`}
               >
                 {sc.severity === "critical" ? (

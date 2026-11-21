@@ -8,10 +8,10 @@ from app.services.cargowise_xml import cargowise_exporter
 
 
 def test_cargowise_universal_interchange_xsd_validation():
-    """Verify generated XML validates strictly against UniversalInterchange v1.1 XSD schema (M4)."""
+    """Verify generated XML validates strictly against UniversalInterchange v1.1 XSD schema."""
     xsd_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "app", "schemas", "cargowise_universal_v1_1.xsd"
+        "app", "schemas", "cargowise_universal_structural_subset.xsd"
     )
     assert os.path.exists(xsd_path), f"XSD schema file not found at {xsd_path}"
 
@@ -35,7 +35,7 @@ def test_cargowise_universal_interchange_xsd_validation():
 
 
 def test_cargowise_configurable_company_and_server_ids():
-    """Verify Company/Code, EnterpriseID, and ServerID are configurable via arguments (M4)."""
+    """Verify Company/Code, EnterpriseID, and ServerID are configurable via arguments."""
     xml_output = cargowise_exporter.generate_universal_interchange_xml(
         company_code="CUSTOM_CO",
         enterprise_id="ENT99",
@@ -47,19 +47,28 @@ def test_cargowise_configurable_company_and_server_ids():
 
 
 def test_cargowise_concept_driven_diff_payload():
-    """Verify generate_diff_payload produces empty diff for clean FOB and valid diff for customs (M4)."""
-    # Clean FOB: zero defects, empty diff summary
-    clean_diff = cargowise_exporter.generate_diff_payload("concept_clean_fob")
-    assert clean_diff["diff_summary"] == []
-    assert clean_diff["reconciled_lawful_xml"] == clean_diff["raw_unaudited_xml"]
-    assert "CLEARED_NO_EXCEPTIONS" in clean_diff["reconciled_lawful_xml"]
+    """The diff is built from the audit result, not from literal amounts."""
+    from app.services.extractor import extractor_service
 
-    # Concept 1 Customs: diff shows HTS reclassification and insurance reconciliation
-    customs_diff = cargowise_exporter.generate_diff_payload("concept_1_customs")
-    assert len(customs_diff["diff_summary"]) == 2
-    nodes = [d["node"] for d in customs_diff["diff_summary"]]
-    assert "InsuranceAmount" in nodes
-    assert "HarmonizedCode" in nodes
+    clean = extractor_service.run_audit("concept_clean_fob")
+    clean_diff = cargowise_exporter.generate_diff_payload(clean)
+    assert clean_diff["diff_summary"] == []
+    assert clean_diff["status"] == "READY_FOR_INGESTION"
+    assert "CLEARED_NO_EXCEPTIONS" in clean_diff["reconciled_lawful_xml"]
+    assert "SSAC-2024-CLN-1048" in clean_diff["reconciled_lawful_xml"]
+
+    customs = extractor_service.run_audit("concept_1_customs")
+    customs_diff = cargowise_exporter.generate_diff_payload(customs)
+    assert customs_diff["status"] == "HELD_PENDING_REVIEW"
+    by_node = {d["node"]: d for d in customs_diff["diff_summary"]}
+    # Line 1 extension corrected 25,500 -> 22,500; line 2 reclassified; CIF freight deducted
+    assert by_node["CommercialInvoiceLine[1]/CustomsValue"]["reconciled"] == "22500.00"
+    assert by_node["CommercialInvoiceLine[2]/HarmonizedCode"]["reconciled"] == "8542.31.0000"
+    assert by_node["InvoiceAmount"]["raw"] == "170000.00"
+    assert by_node["InvoiceAmount"]["reconciled"] == "162500.00"
+
+    sanctions = extractor_service.run_audit("concept_4_sanctions")
+    assert cargowise_exporter.generate_diff_payload(sanctions)["status"] == "BLOCKED_DO_NOT_TRANSMIT"
 
 
 def test_cargowise_universal_interchange_schema():

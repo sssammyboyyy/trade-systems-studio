@@ -56,10 +56,10 @@ class EntryValuationAudit(BaseModel):
     declared_duty_paid: Decimal
     duty_underpayment: Decimal
     statutory_interest_19usc1505: Decimal
-    negligence_penalty_exposure: Decimal = Field(..., description="Up to 2x duty loss under 19 U.S.C. § 1592(c)(3)")
-    gross_negligence_penalty_exposure: Decimal = Field(..., description="Up to 4x duty loss under 19 U.S.C. § 1592(c)(2)")
-    prior_disclosure_tender_amount: Decimal = Field(..., description="Duty Underpayment + Interest only under 19 CFR § 162.74")
-    total_liability_avoided: Decimal = Field(..., description="Gross Negligence Exposure - Prior Disclosure Tender")
+    negligence_penalty_exposure: Decimal = Field(..., description="Statutory maximum, 19 U.S.C. 1592(c)(3): 2x loss of duty (or lesser domestic value)")
+    gross_negligence_penalty_exposure: Decimal = Field(..., description="Statutory maximum, 19 U.S.C. 1592(c)(2): 4x loss of duty (or lesser domestic value)")
+    prior_disclosure_tender_amount: Decimal = Field(..., description="Loss of duty plus interest tendered with a prior disclosure (19 CFR 162.74)")
+    total_liability_avoided: Decimal = Field(..., description="Negligence maximum minus the post-disclosure penalty (interest)")
     assists_audited: List[AssistItem] = Field(default_factory=list)
 
 

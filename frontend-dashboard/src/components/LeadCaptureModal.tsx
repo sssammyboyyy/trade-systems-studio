@@ -119,13 +119,13 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-lg bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#1F2937] p-6 sm:p-7 shadow-2xl rounded-sm"
+        className="relative w-full max-w-lg bg-white dark:bg-terminal-slate border border-slate-200 dark:border-terminal-subtle p-6 sm:p-7 shadow-2xl rounded-sm"
       >
         {/* Close Button */}
         <button
           onClick={onClose}
           aria-label="Close dialog"
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-ink-primary transition-colors border border-slate-200 dark:border-[#1F2937] hover:bg-slate-100 dark:hover:bg-[#1E293B] rounded-sm"
+          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-ink-primary transition-colors border border-slate-200 dark:border-terminal-subtle hover:bg-slate-100 dark:hover:bg-terminal-elevated rounded-sm"
         >
           <X className="w-4 h-4" />
         </button>
@@ -187,7 +187,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Jane Doe, VP Supply Chain"
-                    className="w-full bg-slate-50 dark:bg-[#0B0F19] border border-slate-300 dark:border-[#1F2937] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
+                    className="w-full bg-slate-50 dark:bg-canvas-dark border border-slate-300 dark:border-terminal-subtle px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
                   />
                 </div>
 
@@ -201,7 +201,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="jane@enterprise.com"
-                    className="w-full bg-slate-50 dark:bg-[#0B0F19] border border-slate-300 dark:border-[#1F2937] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
+                    className="w-full bg-slate-50 dark:bg-canvas-dark border border-slate-300 dark:border-terminal-subtle px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
                   />
                 </div>
               </div>
@@ -217,7 +217,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     placeholder="Apex Global Logistics"
-                    className="w-full bg-slate-50 dark:bg-[#0B0F19] border border-slate-300 dark:border-[#1F2937] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
+                    className="w-full bg-slate-50 dark:bg-canvas-dark border border-slate-300 dark:border-terminal-subtle px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
                   />
                 </div>
 
@@ -230,7 +230,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+1 (555) 234-5678"
-                    className="w-full bg-slate-50 dark:bg-[#0B0F19] border border-slate-300 dark:border-[#1F2937] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
+                    className="w-full bg-slate-50 dark:bg-canvas-dark border border-slate-300 dark:border-terminal-subtle px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
                   />
                 </div>
               </div>
@@ -242,7 +242,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                 <select
                   value={volume}
                   onChange={(e) => setVolume(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#0B0F19] border border-slate-300 dark:border-[#1F2937] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
+                  className="w-full bg-slate-50 dark:bg-canvas-dark border border-slate-300 dark:border-terminal-subtle px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cobalt-600 dark:focus:border-cobalt-400 font-mono rounded-sm"
                 >
                   <option value="&lt;500 documents/mo">&lt; 500 documents per month</option>
                   <option value="500-2500 documents/mo">500 - 2,500 documents per month</option>
@@ -281,7 +281,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                     id="inline-privacy-notice-drawer"
                     role="region"
                     aria-label="Privacy and Data Retention Notice"
-                    className="p-3 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-[#1F2937] rounded-sm text-[11px] font-mono text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed"
+                    className="p-3 bg-slate-50 dark:bg-canvas-dark border border-slate-200 dark:border-terminal-subtle rounded-sm text-[11px] font-mono text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed"
                   >
                     <p>
                       <strong className="text-slate-900 dark:text-slate-100">Data Controller:</strong> Samuel, Principal Architect, TradeTech Systems Studio.
@@ -352,7 +352,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
               Your request has been logged. Samuel will review your document volume profile and reach out within 4 business hours to schedule the working session.
             </p>
 
-            <div className="p-3 bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-[#1F2937] text-left text-xs font-mono text-slate-600 dark:text-slate-400 space-y-1 mb-5 rounded-sm">
+            <div className="p-3 bg-slate-50 dark:bg-canvas-dark border border-slate-200 dark:border-terminal-subtle text-left text-xs font-mono text-slate-600 dark:text-slate-400 space-y-1 mb-5 rounded-sm">
               <div className="flex justify-between">
                 <span>Reference ID:</span>
                 <span className="text-cobalt-600 dark:text-cobalt-400 font-semibold">{leadId}</span>
@@ -369,7 +369,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
 
             <button
               onClick={onClose}
-              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-[#1E293B] dark:hover:bg-[#1E293B] text-xs font-mono text-canvas-stone dark:text-slate-200 border border-slate-700 dark:border-[#334155] transition-colors rounded-sm"
+              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-terminal-elevated dark:hover:bg-terminal-elevated text-xs font-mono text-canvas-stone dark:text-slate-200 border border-slate-700 dark:border-terminal-border transition-colors rounded-sm"
             >
               Return to Workbench
             </button>

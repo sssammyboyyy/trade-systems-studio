@@ -35,7 +35,7 @@ export const MobileBottomNavPill: React.FC<MobileBottomNavPillProps> = ({
           }}
           className="fixed bottom-6 inset-x-0 flex justify-center z-50 pointer-events-none px-4"
         >
-          <div className="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-[#090D16]/90 backdrop-blur-2xl border border-white/12 rounded-full shadow-[0_16px_48px_rgba(0,0,0,0.8)] font-mono text-xs ring-1 ring-white/5">
+          <div className="pointer-events-auto flex items-center gap-1.5 p-1.5 bg-canvas-dark/90 backdrop-blur-2xl border border-white/12 rounded-full shadow-[0_16px_48px_rgba(0,0,0,0.8)] font-mono text-xs ring-1 ring-white/5">
             {/* Document Tab Button */}
             <button
               type="button"

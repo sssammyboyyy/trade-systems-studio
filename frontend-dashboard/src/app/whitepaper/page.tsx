@@ -43,14 +43,14 @@ export default function WhitepaperPage() {
   const testBadgeLabel = `${VERIFIED_PYTEST_COUNT}/${VERIFIED_PYTEST_COUNT} Tests Verified`;
 
   return (
-    <div className="min-h-screen bg-transparent text-[#F8FAFC] selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-transparent text-canvas-stone selection:bg-cyan-500 selection:text-black">
       {/* Top Sticky Header */}
-      <header className="sticky top-0 z-40 bg-[#0F172A]/90 backdrop-blur-md border-b border-[#1F2937] px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-terminal-slate/90 backdrop-blur-md border-b border-terminal-subtle px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
             href="/"
             onClick={() => sound.playTick()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0F172A] border border-[#1F2937] hover:border-slate-500 text-xs font-mono text-slate-300 hover:text-ink-primary transition-all group"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-terminal-slate border border-terminal-subtle hover:border-slate-500 text-xs font-mono text-slate-300 hover:text-ink-primary transition-all group"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
             <span>Live Console</span>
@@ -68,7 +68,7 @@ export default function WhitepaperPage() {
             type="button"
             onClick={handlePrint}
             aria-label="Print or save technical whitepaper as PDF"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0F172A] border border-[#1F2937] hover:border-slate-500 text-xs font-mono text-slate-300 hover:text-ink-primary transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-terminal-slate border border-terminal-subtle hover:border-slate-500 text-xs font-mono text-slate-300 hover:text-ink-primary transition-all"
           >
             <Printer className="w-3.5 h-3.5 text-slate-400" />
             <span className="hidden sm:inline">Print / PDF</span>
@@ -89,7 +89,7 @@ export default function WhitepaperPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Sticky Sidebar / Table of Contents */}
         <aside className="lg:col-span-3" aria-label="Whitepaper Table of Contents">
-          <div className="sticky top-20 rounded-xl bg-[#0F172A] border border-[#1F2937] p-4 space-y-4">
+          <div className="sticky top-20 rounded-xl bg-terminal-slate border border-terminal-subtle p-4 space-y-4">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-2">
               <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
               <span>Table of Contents</span>
@@ -129,7 +129,7 @@ export default function WhitepaperPage() {
               })}
             </nav>
 
-            <div className="pt-3 border-t border-[#1F2937] text-[11px] font-mono text-slate-400 space-y-1">
+            <div className="pt-3 border-t border-terminal-subtle text-[11px] font-mono text-slate-400 space-y-1">
               <div>Author: <span className="text-slate-300 font-semibold">Samuel Rencken</span></div>
               <div>Degree: <span className="text-slate-300">BCom Economic Sciences (Intl. Trade)</span></div>
               <div>Status: <span className="text-emerald-400 font-semibold">{testBadgeLabel}</span></div>
@@ -140,7 +140,7 @@ export default function WhitepaperPage() {
         {/* Right Article Body */}
         <main id="main-content" className="lg:col-span-9 space-y-12">
           {/* Paper Title Block */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-[#0F172A] border border-[#1F2937] space-y-4">
+          <div className="p-6 sm:p-8 rounded-2xl bg-terminal-slate border border-terminal-subtle space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-1 text-xs font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded">
                 Systems Architecture Whitepaper (v2.0)
@@ -159,7 +159,7 @@ export default function WhitepaperPage() {
               Deterministic Trade Compliance Engineering: Python Decimal Invariants, Fail-Closed Classification Gating, and Cycle-Safe Corporate Sanctions Graphs
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-[#1F2937]">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-terminal-subtle">
               <div>Author: <span className="text-ink-primary font-bold">Samuel Rencken</span></div>
               <div>•</div>
               <div>Academic Foundation: <span className="text-cyan-400">BCom in Economic Sciences (International Trade), North-West University (NWU)</span></div>
@@ -170,7 +170,7 @@ export default function WhitepaperPage() {
 
           {/* SECTION 1: ABSTRACT */}
           <section id="abstract" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">1.</span>
               <span>Abstract</span>
             </h2>
@@ -181,7 +181,7 @@ export default function WhitepaperPage() {
               Naive generative AI wrappers fail in regulated trade workflows because probabilistic text models hallucinate statutory citations, introduce binary floating-point rounding drift, and fail open on missing data or unrecognized commodities. TradeTech Systems Studio addresses these failure modes with a deterministic decision-support architecture built for licensed customs brokers, compliance engineers, and self-filing importers.
             </p>
 
-            <div className="p-4 rounded-xl bg-[#0F172A] border border-[#1F2937] space-y-2">
+            <div className="p-4 rounded-xl bg-terminal-slate border border-terminal-subtle space-y-2">
               <div className="text-xs font-bold uppercase tracking-wider text-cyan-400 font-mono">
                 Four Non-Negotiable Architectural Invariants:
               </div>
@@ -208,7 +208,7 @@ export default function WhitepaperPage() {
 
           {/* SECTION 2: ARITHMETIC DETERMINISM */}
           <section id="determinism" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">2.</span>
               <span>Arithmetic Determinism & Fail-Closed Input Contracts</span>
             </h2>
@@ -219,7 +219,7 @@ export default function WhitepaperPage() {
                 In IEEE 754 double-precision floating-point arithmetic, binary approximations introduce silent representation drift:
               </p>
 
-              <div className="p-3 rounded-lg bg-[#0B0F19] border border-red-500/30 text-xs font-mono text-red-300 overflow-x-auto">
+              <div className="p-3 rounded-lg bg-canvas-dark border border-red-500/30 text-xs font-mono text-red-300 overflow-x-auto">
                 0.1 + 0.2 = 0.3000000000000000444089209850062616169452667236328125 ≠ 0.3
               </div>
 
@@ -228,13 +228,13 @@ export default function WhitepaperPage() {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-slate-400">Negligence Penalty Exposure (19 U.S.C. § 1592)</div>
-                  <div className="text-sm font-bold text-amber-400 mt-1">0.25x to 2.0x lawful duty loss</div>
+                  <div className="text-sm font-bold text-amber-400 mt-1">Up to 2x loss of duty (lesser of domestic value)</div>
                 </div>
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-slate-400">Gross Negligence Penalty Exposure</div>
-                  <div className="text-sm font-bold text-red-400 mt-1">2.5x to 4.0x lawful duty loss</div>
+                  <div className="text-sm font-bold text-red-400 mt-1">Up to 4x loss of duty (lesser of domestic value)</div>
                 </div>
               </div>
 
@@ -243,7 +243,7 @@ export default function WhitepaperPage() {
                 Every financial calculation in TradeTech Systems Studio runs exclusively in Python <code className="text-emerald-300">decimal.Decimal</code>, serializes monetary fields as exact decimal strings in JSON responses (preventing JavaScript IEEE-754 parse drift at the API boundary), and validates required fields before computing findings so empty inputs always return $0.00 exposure:
               </p>
 
-              <div className="p-4 rounded-lg bg-[#0B0F19] border border-[#1F2937] font-mono text-xs text-slate-300 overflow-x-auto">
+              <div className="p-4 rounded-lg bg-canvas-dark border border-terminal-subtle font-mono text-xs text-slate-300 overflow-x-auto">
                 <pre className="text-emerald-400 leading-relaxed">
 {`from decimal import Decimal, ROUND_HALF_UP
 
@@ -261,7 +261,7 @@ def quantize_currency(value: Decimal) -> Decimal:
 
           {/* SECTION 3: WCO GRI 1-6 STATE MACHINE */}
           <section id="state-machine" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">3.</span>
               <span>Hierarchical WCO GRI 1 to 6 Classification & Broker Review Gate</span>
             </h2>
@@ -271,7 +271,7 @@ def quantize_currency(value: Decimal) -> Decimal:
                 Flat prompt-based classification violates international customs law because tariff determination under the World Customs Organization (WCO) General Rules of Interpretation is strictly hierarchical and path-dependent. Worse, fallback switches that default unrecognized commodities to a preset tariff code create direct 19 U.S.C. § 1592 misclassification liability.
               </p>
 
-              <div className="p-4 rounded-lg bg-[#0F172A] border border-[#1F2937] font-mono text-xs space-y-2">
+              <div className="p-4 rounded-lg bg-terminal-slate border border-terminal-subtle font-mono text-xs space-y-2">
                 <div className="text-cyan-400 font-bold">Hierarchical Code Formulation:</div>
                 <div className="text-ink-primary text-sm">
                   y = concat(c, h, s₁, s₂, t)
@@ -287,15 +287,15 @@ def quantize_currency(value: Decimal) -> Decimal:
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-amber-400 font-bold">1. Unclassified Fallback</div>
                   <div className="text-slate-400 mt-1">Unmatched commodities return confidence 0.0 and explicit unclassified status rather than guessing.</div>
                 </div>
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-red-400 font-bold">2. Auto-Filing Halt</div>
-                  <div className="text-slate-400 mt-1">Blocks automated CargoWise/ACE transmission whenever confidence falls below 0.85.</div>
+                  <div className="text-slate-400 mt-1">Holds the document for review whenever a finding is critical or below 0.85 confidence, or a required field is missing.</div>
                 </div>
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-cyan-400 font-bold">3. Broker Adjudication</div>
                   <div className="text-slate-400 mt-1">Surfaces conflicting Section/Chapter notes with visual cues for licensed customs broker sign-off.</div>
                 </div>
@@ -305,7 +305,7 @@ def quantize_currency(value: Decimal) -> Decimal:
 
           {/* SECTION 4: OFAC 50% GRAPH */}
           <section id="sanctions-graph" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">4.</span>
               <span>Fail-Closed Multi-Hop Corporate Sanctions Graph (OFAC 50% Rule)</span>
             </h2>
@@ -316,7 +316,7 @@ def quantize_currency(value: Decimal) -> Decimal:
                 Under U.S. Treasury Office of Foreign Assets Control (OFAC) guidance, any entity owned <strong>50 percent or more in the aggregate</strong>, directly or indirectly, by one or more blocked persons is itself blocked by operation of law. Crucially, the engine models <strong>OFAC SDN blocking</strong> separately from <strong>BIS Entity List / Unverified List (UVL) export controls</strong> so distinct legal regimes are never conflated.
               </p>
 
-              <div className="p-4 rounded-lg bg-[#0B0F19] border border-cyan-500/30 font-mono text-xs text-slate-300 overflow-x-auto">
+              <div className="p-4 rounded-lg bg-canvas-dark border border-cyan-500/30 font-mono text-xs text-slate-300 overflow-x-auto">
                 <pre className="text-cyan-300 leading-tight">
 {`┌────────────────────────────────────────────────────────────────────────┐
 │            OFAC 50% RULE TRANSITIVE & CYCLE-SAFE RESOLUTION            │
@@ -339,7 +339,7 @@ def quantize_currency(value: Decimal) -> Decimal:
 
           {/* SECTION 5: CBP ASSISTS & PRIOR DISCLOSURE */}
           <section id="valuation-ledger" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">5.</span>
               <span>CBP Assist Valuation Ledger & DRAFT Prior Disclosure Worksheets</span>
             </h2>
@@ -351,11 +351,11 @@ def quantize_currency(value: Decimal) -> Decimal:
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-slate-400">Unit Apportionment Formula</div>
                   <div className="text-sm font-bold text-cyan-400 mt-1">Assist Cost / Anticipated Units</div>
                 </div>
-                <div className="p-3 rounded bg-[#0F172A] border border-[#1F2937]">
+                <div className="p-3 rounded bg-terminal-slate border border-terminal-subtle">
                   <div className="text-slate-400">US Transaction Value Deductions</div>
                   <div className="text-sm font-bold text-emerald-400 mt-1">Exclude Intl. Freight &amp; Insurance</div>
                 </div>
@@ -374,12 +374,12 @@ def quantize_currency(value: Decimal) -> Decimal:
 
           {/* SECTION 6: VERIFICATION & HARDENING */}
           <section id="benchmarks" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">6.</span>
               <span>Automated Verification, Security Hardening & CI Gates</span>
             </h2>
 
-            <div className="p-4 rounded-xl bg-[#0F172A] border border-[#1F2937] space-y-3">
+            <div className="p-4 rounded-xl bg-terminal-slate border border-terminal-subtle space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-ink-primary font-mono">
                   Enforced CI Quality & Security Matrix
@@ -398,10 +398,10 @@ def quantize_currency(value: Decimal) -> Decimal:
                       <th className="py-2">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1F2937] text-ink-secondary">
+                  <tbody className="divide-y divide-terminal-subtle text-ink-secondary">
                     <tr>
                       <td className="py-2 pr-4 text-ink-primary font-bold">Pytest Suite (Py 3.11 &amp; 3.12)</td>
-                      <td className="py-2 pr-4 text-cyan-300">{VERIFIED_PYTEST_COUNT} tests across 15 modules (unit, 37 Hypothesis fuzz tests, 92 E2E compliance tests)</td>
+                      <td className="py-2 pr-4 text-cyan-300">{VERIFIED_PYTEST_COUNT} backend tests (unit, Hypothesis property tests, end-to-end API, and an unseen-document corpus)</td>
                       <td className="py-2 text-emerald-400 font-bold">PASS</td>
                     </tr>
                     <tr>
@@ -440,17 +440,17 @@ def quantize_currency(value: Decimal) -> Decimal:
 
           {/* SECTION 7: CONCLUSION & SCOPE */}
           <section id="conclusion" className="space-y-4">
-            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-[#1F2937] pb-2">
+            <h2 className="text-xl font-bold text-ink-primary font-mono flex items-center gap-2 border-b border-terminal-subtle pb-2">
               <span className="text-cyan-400">7.</span>
               <span>Scope, Governance & Architectural Summary</span>
             </h2>
 
-            <div className="p-6 rounded-2xl bg-[#0F172A] border border-cobalt-500/30 space-y-4">
+            <div className="p-6 rounded-2xl bg-terminal-slate border border-cobalt-500/30 space-y-4">
               <p className="text-sm text-slate-300 leading-relaxed">
                 By grounding trade intelligence in <strong>end-to-end Python Decimal determinism</strong>, <strong>local PDF layout grounding</strong>, <strong>fail-closed classification and sanctions invariants</strong>, and <strong>transparent legal boundaries</strong>, TradeTech Systems Studio demonstrates production-disciplined systems engineering for global customs and freight compliance.
               </p>
 
-              <div className="p-3 rounded-lg bg-[#0B0F19] border border-[#1F2937] text-xs font-mono text-slate-400 leading-relaxed">
+              <div className="p-3 rounded-lg bg-canvas-dark border border-terminal-subtle text-xs font-mono text-slate-400 leading-relaxed">
                 <strong className="text-slate-200">Intended Use Notice:</strong> TradeTech Systems Studio is an open-source technical portfolio and compliance decision-support platform designed for licensed customs brokers and self-filing importers. It does not perform unlicensed customs business under 19 U.S.C. § 1641 or provide legal advice. Client-side PDF uploads execute as a transparent browser demo heuristic and never issue compliance certifications.
               </div>
 
@@ -467,7 +467,7 @@ def quantize_currency(value: Decimal) -> Decimal:
                   href="https://github.com/sssammyboyyy/trade-systems-studio"
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2.5 rounded bg-[#0F172A] hover:bg-slate-800 text-slate-200 border border-[#1F2937] font-mono text-xs transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded bg-terminal-slate hover:bg-slate-800 text-slate-200 border border-terminal-subtle font-mono text-xs transition-colors flex items-center gap-1.5"
                 >
                   <span>{`Review Codebase (${VERIFIED_PYTEST_COUNT}/${VERIFIED_PYTEST_COUNT} Tests)`}</span>
                   <ExternalLink className="w-3.5 h-3.5" />

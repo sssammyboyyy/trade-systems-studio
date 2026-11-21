@@ -7,7 +7,7 @@
 > **Interactive Web Edition:** [https://sssammyboyyy.github.io/trade-systems-studio/whitepaper/](https://sssammyboyyy.github.io/trade-systems-studio/whitepaper/)  
 > **Live Console:** [https://sssammyboyyy.github.io/trade-systems-studio/](https://sssammyboyyy.github.io/trade-systems-studio/)  
 > **Open Source Codebase:** [https://github.com/sssammyboyyy/trade-systems-studio](https://github.com/sssammyboyyy/trade-systems-studio)  
-> **Verification Status:** 200/200 Automated Pytest Tests Passing (Python 3.11 & 3.12) | Next.js 15.5.29 | MIT License  
+> **Verification Status:** 260/260 Automated Pytest Tests Passing (Python 3.11 & 3.12) | Next.js 15.5.29 | MIT License  
 
 ---
 
@@ -48,7 +48,7 @@ def quantize_currency(value: Decimal) -> Decimal:
 
 All core engines enforce fail-closed input validation:
 - **Empty-Input Invariant:** Missing required payload fields yield `$0.00` exposure and zero findings rather than defaulting to scenario constants.
-- **Explicit `None` vs. `0` Boundaries:** In FMC Docket 21-08 detention checks (`freight_audit.py`), `0` contracted free days is preserved accurately rather than coerced to a default free-time window.
+- **Explicit `None` vs. `0` Boundaries:** In detention free-time checks (`freight_audit.py`), `0` contracted free days is preserved accurately rather than coerced to a default free-time window.
 - **Statutory Fee & Drawback Math:** Merchandise Processing Fees (MPF capped between `$34.58` and `$670.86` under FY2027 91 FR 48398 / 19 CFR § 24.23, with historical FY2024 to FY2026 schedule support), origin-aware Section 301 Chapter 99 surcharges, Harbor Maintenance Fees (`0.125%` under 19 CFR § 24.24), quarterly daily-compounded 19 U.S.C. § 1505 interest, and 99% Section 1313 Duty Drawback claims (enforcing the 5-year statutory time bar) are verified by 37 Hypothesis property-based fuzz tests and 95 E2E compliance tests.
 
 ---
@@ -74,7 +74,7 @@ graph TD
 ### 3.2 Word-Boundary Enforcement & Fail-Closed Fallback
 1. **Strict Word Boundaries:** Regex matching prevents false-positive substring collisions (for example, preventing `"esc"` from matching inside `"description"` or `"telescope"`).
 2. **No Silent Defaulting:** Unmatched products (such as unrelated textiles or food items) never fall back to a default tariff code; they fail closed with `confidence = 0.0` and `requires_human_review = True`.
-3. **Visual Uncertainty Gating:** Multi-component goods scoring below $\tau = 0.85$ halt automated ACE/CargoWise transmission and surface conflicting Section/Chapter legal notes for licensed customs broker review.
+3. **Visual Uncertainty Gating:** Multi-component goods scoring below $\tau = 0.85$ hold the document for broker review and surface conflicting Section/Chapter legal notes for licensed customs broker review.
 
 ---
 
@@ -118,7 +118,7 @@ Every push to `main` enforces automated quality, security, and regression gates 
 
 | Verification Layer | Scope & Enforcement | Verified Outcome |
 | :--- | :--- | :--- |
-| **Pytest Matrix (Python 3.11 & 3.12)** | 230 tests across 16 modules (unit tests, 37 Hypothesis property fuzz tests, 95 E2E compliance tests, real PDF field parser & XSD validation tests) | **230/230 PASS** |
+| **Pytest Matrix (Python 3.11 & 3.12)** | 260 tests across 17 modules (unit, Hypothesis property tests, E2E compliance, PDF parser, unseen-document corpus, XSD structure) | **260/260 PASS** |
 | **Static Analysis & Type Safety** | `ruff check . ../scripts`, `mypy app` (26 source files), ESLint (`npm run lint`), strict TypeScript (`npx tsc --noEmit`) | **0 Errors** |
 | **API & Dependency Hardening** | Strict `ALLOWED_ORIGINS` CORS allowlist, `EmailStr` + `privacy_consent: Literal[True]` + bounded IP rate limiters, `pip-audit` (0 vulns), `npm audit --omit=dev` (0 vulns), Next.js `15.5.29` | **VERIFIED** |
 | **Document & XML Provenance** | Byte-deterministic 2-page synthetic PDF fixtures, real `pypdf` field & `[0, 1000)` bounding box extraction, XSD-validated SHA-256 content-addressed CargoWise XML | **VERIFIED** |

@@ -51,6 +51,8 @@ export const RollingNumber: React.FC<RollingNumberProps> = ({
 
     const animId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(animId);
+    // Animates from whatever is on screen; re-running on displayValue would restart every frame
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetNum, durationMs]);
 
   if (isFinished && prefix === "$") {

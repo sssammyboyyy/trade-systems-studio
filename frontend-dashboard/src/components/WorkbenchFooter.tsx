@@ -33,7 +33,7 @@ export const WorkbenchFooter: React.FC<WorkbenchFooterProps> = ({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-6 border-t border-[#1F2937] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-6 border-t border-terminal-subtle flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           © {new Date().getFullYear()} Samuel Rencken · Trade Systems Studio. All rights reserved.
         </div>

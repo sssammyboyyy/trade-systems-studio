@@ -56,23 +56,29 @@ def test_customs_invoice_with_unreported_assists():
     metrics, discrepancies = audit_customs_invoice(data)
     assist_disc = next((d for d in discrepancies if "Assist" in d.title), None)
     assert assist_disc is not None
-    assert assist_disc.statutory_code == "19 CFR § 152.103(d)"
+    assert assist_disc.statutory_code == "19 U.S.C. 1401a(h)(1)(A) / 19 CFR 152.103(d)"
     assert assist_disc.severity == "critical"
-    # Assist of $40,000 @ 25% duty loss = $10,000 -> Gross negligence 4.0x = $40,000.00
-    assert assist_disc.exposure_amount == Decimal("40000.00")
+    # Assist of $40,000 @ 25% = $10,000 loss of duty -> negligence maximum 2x = $20,000.00
+    assert assist_disc.exposure_amount == Decimal("20000.00")
 
 def test_drawback_audit_contingency_fee():
     data = {
-        "dutiable_value": "240000.00",
+        "import_entry": "CBP-7501-84920184",
+        "export_bl": "BGFU-0941824",
+        "entry_date": "2024-01-15",
+        "export_date": "2024-03-10",
+        "claim_date": "2026-11-20",
         "duties_paid": "27600.00",
+        "imported_quantity": "1000",
+        "exported_quantity": "1000",
+        "direct_identification": True,
         "drawback_percentage": "0.99",
-        "is_timely_5yr_window": True
     }
     metrics, discrepancies = audit_duty_drawback(data)
     disc = next(d for d in discrepancies if "99% Statutory" in d.title)
     assert disc is not None
     assert metrics.drawback_unclaimed_unlocked == Decimal("27324.00")
-    # Verify no contingency fee deduction and broker software service model (H10)
+    # Verify no contingency fee deduction and broker software service model
     assert "contingency_fee_20pct" not in disc.metadata
     assert disc.metadata["cash_recovery_ready"] == "27324.00"
     assert disc.metadata["service_model"] == "compliance_auditing_software_for_licensed_brokers_and_self_filers"
